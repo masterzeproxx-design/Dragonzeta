@@ -11,11 +11,11 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.text.InputType
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import android.text.InputType
 
 class MainActivity : Activity() {
 
@@ -176,12 +176,8 @@ class MainActivity : Activity() {
     private fun showLogin() {
         val root = createRoot()
 
-        root.addView(
-            label("🐉 DRAGÓN ZETA", 27f, cyan, true)
-        )
-        root.addView(
-            label("SEGURIDAD PERSONAL", 13f, green, true)
-        )
+        root.addView(label("🐉 DRAGÓN ZETA", 27f, cyan, true))
+        root.addView(label("SEGURIDAD PERSONAL", 13f, green, true))
 
         val image = ImageView(this)
         val imageId = resources.getIdentifier(
@@ -208,7 +204,7 @@ class MainActivity : Activity() {
             hint = "Usuario"
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
-            singleLine = true
+            isSingleLine = true
             background = panel(cyan)
             setPadding(dp(12), dp(8), dp(12), dp(8))
         }
@@ -219,7 +215,7 @@ class MainActivity : Activity() {
             setTextColor(Color.WHITE)
             inputType = InputType.TYPE_CLASS_TEXT or
                 InputType.TYPE_TEXT_VARIATION_PASSWORD
-            singleLine = true
+            isSingleLine = true
             background = panel(cyan)
             setPadding(dp(12), dp(8), dp(12), dp(8))
         }
@@ -239,10 +235,7 @@ class MainActivity : Activity() {
             }
         })
 
-        root.addView(
-            label("SISTEMA DE PROTECCIÓN", 11f, Color.GRAY)
-        )
-
+        root.addView(label("SISTEMA DE PROTECCIÓN", 11f, Color.GRAY))
         showScreen(root)
     }
 
@@ -254,41 +247,33 @@ class MainActivity : Activity() {
 
         val root = createRoot()
 
-        // ENCABEZADO
         addHeader(root)
 
-        root.addView(
-            label("PANEL DE CONTROL", 22f, Color.WHITE, true)
-        )
+        root.addView(label("PANEL DE CONTROL", 22f, Color.WHITE, true))
         root.addView(
             label("CENTRO DE SEGURIDAD PERSONAL", 11f, cyan, true)
         )
 
-        // PERFIL DEL USUARIO
         val profile = createCard(root, "👤 PERFIL DE USUARIO", cyan)
-
-        profile.addView(
-            label("ZEPROXX", 23f, Color.WHITE, true)
-        )
-        profile.addView(
-            label("USUARIO AUTORIZADO", 13f, green, true)
-        )
+        profile.addView(label("ZEPROXX", 23f, Color.WHITE, true))
+        profile.addView(label("USUARIO AUTORIZADO", 13f, green, true))
         profile.addView(
             label("ESTADO: SISTEMA DISPONIBLE", 12f, Color.LTGRAY)
         )
 
-        // ESTADO GENERAL
         val statusCard = createCard(root, "🛡️ PROTECCIÓN", green)
         statusCard.addView(
             label("DRAGÓN ZETA ESTÁ LISTO", 16f, Color.WHITE, true)
         )
         statusCard.addView(
-            label("Controla tus opciones desde este panel", 12f, Color.LTGRAY)
+            label(
+                "Controla tus opciones desde este panel",
+                12f,
+                Color.LTGRAY
+            )
         )
 
-        // EMERGENCIA SOS
         val sosCard = createCard(root, "🆘 BOTÓN SOS", red)
-
         sosCard.addView(
             label("Número de emergencia", 14f, Color.WHITE)
         )
@@ -298,7 +283,7 @@ class MainActivity : Activity() {
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
             inputType = InputType.TYPE_CLASS_PHONE
-            setSingleLine(true)
+            isSingleLine = true
             setText(prefs.getString("sos_phone", ""))
             background = panel(cyan)
             setPadding(dp(12), dp(8), dp(12), dp(8))
@@ -341,11 +326,9 @@ class MainActivity : Activity() {
         cancelButton.visibility = View.GONE
         addButton(sosCard, cancelButton)
 
-        // FUNCIONES DE SEGURIDAD
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
         addOption(root, "📍 ANTI-RASTREO", "track")
 
-        // CERRAR SESIÓN
         addButton(root, makeButton("CERRAR SESIÓN", amber) {
             logout()
         })
