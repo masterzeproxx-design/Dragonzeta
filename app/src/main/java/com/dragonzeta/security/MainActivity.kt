@@ -45,7 +45,6 @@ class MainActivity : Activity() {
     private var whatsappScanTimer: CountDownTimer? = null
     private var whatsappScanAnimator: ObjectAnimator? = null
 
-    // ANTI-CHUPONEO: CAPA TRANSPARENTE
     private var overlayTimer: CountDownTimer? = null
     private var overlayFrame: FrameLayout? = null
 
@@ -123,7 +122,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // CONTENEDOR QUE PERMITE MOSTRAR LA CAPA ENCIMA DEL MENÚ
     private fun showScreen(root: LinearLayout) {
         val scroll = ScrollView(this)
         scroll.setBackgroundColor(bg)
@@ -379,10 +377,7 @@ class MainActivity : Activity() {
         cancelButton.visibility = View.GONE
         addButton(sosCard, cancelButton)
 
-        // ANTI-CHUPONEO AHORA ABRE LA CAPA DE CÓDIGOS
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
-
-        // ANTI-RASTREO CONSERVA SU INTERRUPTOR
         addOption(root, "📍 ANTI-RASTREO", "track")
 
         addWhatsAppProtection(root)
@@ -404,22 +399,42 @@ class MainActivity : Activity() {
         title: String,
         key: String
     ) {
-        val card = createCard(root, title, cyan)
+        val active = prefs.getBoolean("${key}_active", false)
+        val card = createCard(
+            root,
+            title,
+            if (active) green else cyan
+        )
 
         if (key == "spy") {
 
             card.addView(
                 label(
-                    "Análisis visual de seguridad de red",
+                    if (active) "✓ RED SEGURA • FUNCIÓN ACTIVADA"
+                    else "Análisis visual de seguridad de red",
                     12f,
-                    Color.LTGRAY
+                    if (active) green else Color.LTGRAY,
+                    active
                 )
             )
 
             addButton(
                 card,
-                makeButton("INICIAR ESCANEO", green) {
-                    showAntiChuponeoOverlay()
+                makeButton(
+                    if (active) "ANTI-CHUPONEO ACTIVADO"
+                    else "INICIAR ESCANEO",
+                    if (active) green else cyan
+                ) {
+                    if (prefs.getBoolean("spy_active", false)) {
+                        prefs.edit()
+                            .putBoolean("spy_active", false)
+                            .apply()
+
+                        showHome()
+                        toast("ANTI-CHUPONEO desactivado.")
+                    } else {
+                        showAntiChuponeoOverlay()
+                    }
                 }
             )
 
@@ -429,7 +444,7 @@ class MainActivity : Activity() {
                 text = "Activar función"
                 textSize = 14f
                 setTextColor(Color.WHITE)
-                isChecked = prefs.getBoolean("${key}_active", false)
+                isChecked = active
             }
 
             switch.setOnCheckedChangeListener { _, checked ->
@@ -458,9 +473,6 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             setPadding(dp(20), dp(25), dp(20), dp(25))
-
-            // FONDO SEMITRANSPARENTE:
-            // EL MENÚ SIGUE VISIBLE DETRÁS
             setBackgroundColor(Color.argb(190, 1, 7, 15))
         }
 
@@ -530,7 +542,7 @@ class MainActivity : Activity() {
             android.R.attr.progressBarStyleHorizontal
         ).apply {
             max = 100
-            progress = 0
+            this.progress = 0
             progressTintList = ColorStateList.valueOf(green)
             progressBackgroundTintList =
                 ColorStateList.valueOf(Color.DKGRAY)
@@ -629,7 +641,12 @@ class MainActivity : Activity() {
 
                 codeView.text = codeLines.joinToString("\n")
 
-                status.text = "✓ RED ASEGURADA"
+                // GUARDAR ANTI-CHUPONEO COMO ACTIVADO
+                prefs.edit()
+                    .putBoolean("spy_active", true)
+                    .apply()
+
+                status.text = "✓ RED SEGURA\nFUNCIÓN ACTIVADA"
                 status.setTextColor(green)
 
                 closeButton.visibility = View.VISIBLE
@@ -651,7 +668,10 @@ class MainActivity : Activity() {
             frame.removeView(overlay)
         }
 
-        toast("Regresando al panel de seguridad.")
+        // ACTUALIZAR EL MENÚ PARA MOSTRAR EL BOTÓN VERDE
+        showHome()
+
+        toast("ANTI-CHUPONEO ACTIVADO.")
     }
 
     // ANTI-HACK WSP CON ESCUDO Y ANIMACIÓN
