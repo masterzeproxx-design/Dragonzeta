@@ -18,13 +18,12 @@ import android.widget.*
 
 class MainActivity : Activity() {
 
-    private val bg = Color.rgb(4, 10, 23)
-    private val cyan = Color.rgb(44, 216, 255)
-    private val green = Color.rgb(30, 190, 90)
+    private val bg = Color.rgb(2, 6, 16)
+    private val cyan = Color.rgb(0, 170, 255)
+    private val green = Color.rgb(20, 220, 100)
     private val red = Color.rgb(220, 55, 55)
     private val amber = Color.rgb(220, 145, 45)
 
-    // Acceso único para todas las instalaciones
     private val accessUser = "ZEPROXX"
     private val accessPassword = "16071997"
 
@@ -41,23 +40,18 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         window.statusBarColor = bg
         window.navigationBarColor = bg
-
         showLogin()
     }
 
-    private fun dp(value: Int): Int {
-        return (value * resources.displayMetrics.density).toInt()
-    }
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 
-    private fun panel(color: Int): GradientDrawable {
-        return GradientDrawable().apply {
-            setColor(Color.rgb(10, 25, 45))
-            cornerRadius = dp(18).toFloat()
-            setStroke(dp(2), color)
-        }
+    private fun panel(color: Int) = GradientDrawable().apply {
+        setColor(Color.rgb(5, 15, 30))
+        cornerRadius = dp(18).toFloat()
+        setStroke(dp(2), color)
     }
 
     private fun label(
@@ -65,35 +59,28 @@ class MainActivity : Activity() {
         size: Float,
         color: Int,
         bold: Boolean = false
-    ): TextView {
-        return TextView(this).apply {
-            this.text = text
-            textSize = size
-            setTextColor(color)
-            gravity = Gravity.CENTER
-            if (bold) setTypeface(typeface, Typeface.BOLD)
-            setPadding(dp(5), dp(7), dp(5), dp(7))
-        }
+    ) = TextView(this).apply {
+        this.text = text
+        textSize = size
+        setTextColor(color)
+        gravity = Gravity.CENTER
+        if (bold) setTypeface(typeface, Typeface.BOLD)
+        setPadding(dp(5), dp(7), dp(5), dp(7))
     }
 
     private fun makeButton(
         text: String,
         color: Int,
         action: () -> Unit
-    ): Button {
-        return Button(this).apply {
-            this.text = text
-            setTextColor(Color.WHITE)
-            isAllCaps = false
-            background = panel(color)
-            setOnClickListener { action() }
-        }
+    ) = Button(this).apply {
+        this.text = text
+        setTextColor(Color.WHITE)
+        isAllCaps = false
+        background = panel(color)
+        setOnClickListener { action() }
     }
 
-    private fun addButton(
-        parent: LinearLayout,
-        child: View
-    ) {
+    private fun addButton(parent: LinearLayout, child: View) {
         parent.addView(
             child,
             LinearLayout.LayoutParams(
@@ -105,13 +92,11 @@ class MainActivity : Activity() {
         )
     }
 
-    private fun createRoot(): LinearLayout {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(18), dp(20), dp(18), dp(24))
-            setBackgroundColor(bg)
-        }
+    private fun createRoot() = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER_HORIZONTAL
+        setPadding(dp(18), dp(12), dp(18), dp(24))
+        setBackgroundColor(bg)
     }
 
     private fun addHeader(root: LinearLayout) {
@@ -120,9 +105,7 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
         }
 
-        header.addView(
-            label("🐉 DRAGÓN ZETA", 27f, cyan, true)
-        )
+        header.addView(label("🐉 DRAGÓN ZETA", 27f, cyan, true))
 
         val paid = TextView(this).apply {
             text = "PAGADO"
@@ -134,24 +117,12 @@ class MainActivity : Activity() {
             background = GradientDrawable().apply {
                 setColor(green)
                 cornerRadius = dp(6).toFloat()
-                setStroke(dp(1), green)
             }
         }
 
-        header.addView(
-            paid,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(dp(7), 0, 0, 0)
-            }
-        )
-
+        header.addView(paid)
         root.addView(header)
-        root.addView(
-            label("SEGURIDAD PERSONAL", 14f, Color.WHITE, true)
-        )
+        root.addView(label("SEGURIDAD PERSONAL", 14f, Color.WHITE, true))
     }
 
     private fun createCard(
@@ -177,7 +148,6 @@ class MainActivity : Activity() {
                 setMargins(0, dp(9), 0, dp(9))
             }
         )
-
         return card
     }
 
@@ -188,62 +158,73 @@ class MainActivity : Activity() {
         setContentView(scroll)
     }
 
+    // PANTALLA DE ENTRADA ANONYMOUS + DRAGON
     private fun showLogin() {
         loggedIn = false
-
         val root = createRoot()
-        addHeader(root)
+
+        val dragonImage = ImageView(this).apply {
+            setImageResource(R.drawable.dragon_zeta_login_header)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            adjustViewBounds = true
+        }
 
         root.addView(
-            label("ACCESO AL SISTEMA", 21f, cyan, true)
+            dragonImage,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(225)
+            )
+        )
+
+        root.addView(label("ACCESO AL SISTEMA", 20f, cyan, true))
+        root.addView(
+            label("IDENTIFICACIÓN DE USUARIO", 12f, Color.LTGRAY, true)
         )
 
         val username = EditText(this).apply {
             hint = "Usuario"
             setTextColor(Color.WHITE)
-            setHintTextColor(Color.GRAY)
+            setHintTextColor(Color.LTGRAY)
             inputType = InputType.TYPE_CLASS_TEXT
             setSingleLine(true)
             background = panel(cyan)
-            setPadding(dp(12), dp(8), dp(12), dp(8))
+            setPadding(dp(16), dp(8), dp(16), dp(8))
         }
 
         val password = EditText(this).apply {
             hint = "Contraseña"
             setTextColor(Color.WHITE)
-            setHintTextColor(Color.GRAY)
+            setHintTextColor(Color.LTGRAY)
             inputType = InputType.TYPE_CLASS_TEXT or
                 InputType.TYPE_TEXT_VARIATION_PASSWORD
             setSingleLine(true)
             background = panel(cyan)
-            setPadding(dp(12), dp(8), dp(12), dp(8))
+            setPadding(dp(16), dp(8), dp(16), dp(8))
         }
 
         root.addView(
             username,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(54)
-            ).apply {
-                setMargins(0, dp(8), 0, dp(8))
-            }
+                dp(56)
+            ).apply { setMargins(0, dp(10), 0, dp(10)) }
         )
 
         root.addView(
             password,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(54)
-            ).apply {
-                setMargins(0, dp(8), 0, dp(8))
-            }
+                dp(56)
+            ).apply { setMargins(0, dp(8), 0, dp(14)) }
         )
 
         addButton(root, makeButton("INICIAR SESIÓN", green) {
             val user = username.text.toString().trim()
             val pass = password.text.toString()
 
-            if (user.equals(accessUser, ignoreCase = true) &&
+            if (
+                user.equals(accessUser, ignoreCase = true) &&
                 pass == accessPassword
             ) {
                 loggedIn = true
@@ -255,11 +236,7 @@ class MainActivity : Activity() {
         })
 
         root.addView(
-            label(
-                "Ingresa tu usuario y contraseña para continuar.",
-                13f,
-                Color.LTGRAY
-            )
+            label("SISTEMA DE SEGURIDAD PERSONAL", 11f, Color.GRAY)
         )
 
         showScreen(root)
@@ -273,20 +250,10 @@ class MainActivity : Activity() {
 
         val root = createRoot()
         addHeader(root)
+        root.addView(label("SISTEMA ACTIVADO", 17f, green, true))
 
-        root.addView(
-            label("SISTEMA ACTIVADO", 17f, green, true)
-        )
-
-        val sosCard = createCard(
-            root,
-            "🆘 SOS – EMERGENCIA",
-            red
-        )
-
-        sosCard.addView(
-            label("Número de emergencia", 14f, Color.WHITE)
-        )
+        val sosCard = createCard(root, "🆘 SOS – EMERGENCIA", red)
+        sosCard.addView(label("Número de emergencia", 14f, Color.WHITE))
 
         val phone = EditText(this).apply {
             hint = "+51 999 999 999"
@@ -307,83 +274,48 @@ class MainActivity : Activity() {
             )
         )
 
-        addButton(
-            sosCard,
-            makeButton("GUARDAR NÚMERO", cyan) {
-                val number = phone.text.toString().trim()
-
-                if (number.isBlank()) {
-                    toast("Escribe un número.")
-                } else {
-                    prefs.edit()
-                        .putString("sos_phone", number)
-                        .apply()
-
-                    toast("Número guardado.")
-                }
+        addButton(sosCard, makeButton("GUARDAR NÚMERO", cyan) {
+            val number = phone.text.toString().trim()
+            if (number.isBlank()) {
+                toast("Escribe un número.")
+            } else {
+                prefs.edit().putString("sos_phone", number).apply()
+                toast("Número guardado.")
             }
-        )
+        })
 
-        countdownText = label(
-            "SOS PREPARADO",
-            20f,
-            Color.WHITE,
-            true
-        )
-
+        countdownText = label("SOS PREPARADO", 20f, Color.WHITE, true)
         sosCard.addView(countdownText)
 
-        addButton(
-            sosCard,
-            makeButton("ACTIVAR SOS", red) {
-                val number = phone.text.toString().trim()
-
-                if (number.isBlank()) {
-                    toast("Primero escribe un número.")
-                } else {
-                    prefs.edit()
-                        .putString("sos_phone", number)
-                        .apply()
-
-                    prepareSOS(number)
-                }
+        addButton(sosCard, makeButton("ACTIVAR SOS", red) {
+            val number = phone.text.toString().trim()
+            if (number.isBlank()) {
+                toast("Primero escribe un número.")
+            } else {
+                prefs.edit().putString("sos_phone", number).apply()
+                prepareSOS(number)
             }
-        )
+        })
 
-        cancelButton = makeButton(
-            "CANCELAR EMERGENCIA",
-            red
-        ) {
+        cancelButton = makeButton("CANCELAR EMERGENCIA", red) {
             cancelSOS()
         }
-
         cancelButton.visibility = View.GONE
         addButton(sosCard, cancelButton)
 
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
         addOption(root, "📍 ANTI-RASTREO", "track")
 
-        addButton(
-            root,
-            makeButton("CERRAR SESIÓN", amber) {
-                logout()
-            }
-        )
+        addButton(root, makeButton("CERRAR SESIÓN", amber) {
+            logout()
+        })
 
-        root.addView(
-            label("DRAGÓN ZETA • VERSIÓN 1.0", 11f, Color.GRAY)
-        )
-
+        root.addView(label("DRAGÓN ZETA • VERSIÓN 1.0", 11f, Color.GRAY))
         showScreen(root)
     }
 
-    private fun addOption(
-        root: LinearLayout,
-        title: String,
-        key: String
-    ) {
+    private fun addOption(root: LinearLayout, title: String, key: String) {
         val card = createCard(root, title, cyan)
-
         val status = label("", 16f, Color.WHITE, true)
         card.addView(status)
 
@@ -395,24 +327,14 @@ class MainActivity : Activity() {
             } else {
                 "🔴 FUNCIÓN DESACTIVADA"
             }
-
-            status.setTextColor(
-                if (active) green else red
-            )
+            status.setTextColor(if (active) green else red)
         }
 
-        addButton(
-            card,
-            makeButton("ACTIVAR / DESACTIVAR", green) {
-                active = !active
-
-                prefs.edit()
-                    .putBoolean("${key}_active", active)
-                    .apply()
-
-                refresh()
-            }
-        )
+        addButton(card, makeButton("ACTIVAR / DESACTIVAR", green) {
+            active = !active
+            prefs.edit().putBoolean("${key}_active", active).apply()
+            refresh()
+        })
 
         refresh()
     }
@@ -428,8 +350,8 @@ class MainActivity : Activity() {
         pendingNumber = number
 
         if (
-            checkSelfPermission(Manifest.permission.CALL_PHONE)
-            == PackageManager.PERMISSION_GRANTED
+            checkSelfPermission(Manifest.permission.CALL_PHONE) ==
+            PackageManager.PERMISSION_GRANTED
         ) {
             startCountdown()
         } else {
@@ -442,18 +364,13 @@ class MainActivity : Activity() {
 
     private fun startCountdown() {
         timer?.cancel()
-
         countdownText.text = "LLAMADA EN 5 SEGUNDOS"
         cancelButton.visibility = View.VISIBLE
 
         timer = object : CountDownTimer(5000, 1000) {
-
             override fun onTick(millisUntilFinished: Long) {
-                val seconds =
-                    (millisUntilFinished + 999) / 1000
-
-                countdownText.text =
-                    "LLAMADA EN $seconds SEGUNDOS"
+                val seconds = (millisUntilFinished + 999) / 1000
+                countdownText.text = "LLAMADA EN $seconds SEGUNDOS"
             }
 
             override fun onFinish() {
@@ -461,17 +378,14 @@ class MainActivity : Activity() {
                 cancelButton.visibility = View.GONE
                 callEmergency()
             }
-
         }.start()
     }
 
     private fun cancelSOS() {
         timer?.cancel()
         timer = null
-
         countdownText.text = "EMERGENCIA CANCELADA"
         cancelButton.visibility = View.GONE
-
         toast("Llamada cancelada.")
     }
 
@@ -482,8 +396,8 @@ class MainActivity : Activity() {
         }
 
         if (
-            checkSelfPermission(Manifest.permission.CALL_PHONE)
-            != PackageManager.PERMISSION_GRANTED
+            checkSelfPermission(Manifest.permission.CALL_PHONE) !=
+            PackageManager.PERMISSION_GRANTED
         ) {
             toast("Falta el permiso para llamar.")
             return
@@ -494,9 +408,7 @@ class MainActivity : Activity() {
                 Intent.ACTION_CALL,
                 Uri.parse("tel:${Uri.encode(pendingNumber)}")
             )
-
             startActivity(intent)
-
         } catch (e: Exception) {
             toast("No se pudo iniciar la llamada.")
         }
@@ -508,9 +420,7 @@ class MainActivity : Activity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(
-            requestCode,
-            permissions,
-            grantResults
+            requestCode, permissions, grantResults
         )
 
         if (requestCode == 100) {
@@ -527,11 +437,7 @@ class MainActivity : Activity() {
     }
 
     private fun toast(message: String) {
-        Toast.makeText(
-            this,
-            message,
-            Toast.LENGTH_LONG
-        ).show()
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     override fun onDestroy() {
