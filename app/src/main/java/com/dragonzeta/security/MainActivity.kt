@@ -3,6 +3,7 @@ package com.dragonzeta.security
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -22,9 +23,8 @@ class MainActivity : Activity() {
     private val bg = Color.rgb(3, 7, 19)
     private val panelColor = Color.rgb(7, 17, 35)
     private val cyan = Color.rgb(0, 190, 255)
-    private val green = Color.rgb(0, 235, 115)
+    private val blue = Color.rgb(0, 95, 220)
     private val red = Color.rgb(255, 45, 65)
-    private val amber = Color.rgb(255, 180, 40)
 
     private val accessUser = "ZEPROXX"
     private val accessPassword = "16071997"
@@ -149,35 +149,18 @@ class MainActivity : Activity() {
         return card
     }
 
+    // ENCABEZADO AZUL, SIN IMAGEN ESTIRADA
     private fun addBanner(root: LinearLayout) {
-        val imageId = resources.getIdentifier(
-            "dragon_zeta_login_header",
-            "drawable",
-            packageName
+        root.addView(
+            label("🐉 DRAGÓN ZETA", 29f, cyan, true)
         )
 
-        if (imageId != 0) {
-            val image = ImageView(this)
-            image.setImageResource(imageId)
-            image.scaleType = ImageView.ScaleType.CENTER_CROP
-
-            root.addView(
-                image,
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    dp(185)
-                ).apply {
-                    setMargins(0, 0, 0, dp(5))
-                }
-            )
-        } else {
-            root.addView(
-                label("🐉 DRAGÓN ZETA", 27f, cyan, true)
-            )
-        }
+        root.addView(
+            label("SEGURIDAD PERSONAL", 14f, cyan, true)
+        )
 
         root.addView(
-            label("SEGURIDAD PERSONAL", 14f, green, true)
+            label("━━━━━━━━━━━━━━━━━━━━", 13f, blue, true)
         )
     }
 
@@ -211,7 +194,7 @@ class MainActivity : Activity() {
         card.addView(username)
         card.addView(password)
 
-        addButton(card, makeButton("INGRESAR", green) {
+        addButton(card, makeButton("INGRESAR", blue) {
             val user = username.text.toString().trim()
             val pass = password.text.toString()
 
@@ -238,11 +221,16 @@ class MainActivity : Activity() {
 
         val root = createRoot()
 
-        // ENCABEZADO DEL DRAGÓN
         addBanner(root)
 
-        val paid = label("✓ PAGADO  •  LICENCIA ACTIVA", 13f, green, true)
-        paid.background = panel(green)
+        val paid = label(
+            "✓ PAGADO  •  LICENCIA ACTIVA",
+            13f,
+            cyan,
+            true
+        )
+        paid.background = panel(cyan)
+
         root.addView(
             paid,
             LinearLayout.LayoutParams(
@@ -251,7 +239,7 @@ class MainActivity : Activity() {
             )
         )
 
-        // PERFIL Y ESTADO
+        // PERFIL
         val profile = createCard(root, "USUARIO AUTORIZADO", cyan)
 
         profile.addView(
@@ -259,7 +247,7 @@ class MainActivity : Activity() {
         )
 
         profile.addView(
-            label("● SISTEMA DISPONIBLE", 15f, green, true)
+            label("● SISTEMA DISPONIBLE", 15f, cyan, true)
         )
 
         profile.addView(
@@ -292,7 +280,7 @@ class MainActivity : Activity() {
             )
         )
 
-        addButton(sosCard, makeButton("GUARDAR NÚMERO", cyan) {
+        addButton(sosCard, makeButton("GUARDAR NÚMERO", blue) {
             val number = phone.text.toString().trim()
 
             if (number.isBlank()) {
@@ -317,7 +305,7 @@ class MainActivity : Activity() {
             }
         })
 
-        cancelButton = makeButton("CANCELAR EMERGENCIA", amber) {
+        cancelButton = makeButton("CANCELAR EMERGENCIA", blue) {
             cancelSOS()
         }
 
@@ -325,8 +313,11 @@ class MainActivity : Activity() {
         addButton(sosCard, cancelButton)
 
         // OPCIONES DE SEGURIDAD
-        addOption(root, "🎙️ ANTI-CHUPONEO", "spy", cyan)
-        addOption(root, "📍 ANTI-RASTREO", "track", green)
+        addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
+        addOption(root, "📍 ANTI-RASTREO", "track")
+
+        // NUEVA OPCIÓN ANTI-HACK WSP
+        addWhatsAppOption(root)
 
         // PIE DE PANTALLA
         root.addView(
@@ -334,14 +325,14 @@ class MainActivity : Activity() {
         )
 
         root.addView(
-            label("VERSIÓN 1.0", 13f, green, true)
+            label("VERSIÓN 1.0", 13f, cyan, true)
         )
 
         root.addView(
             label("TU PRIVACIDAD, NUESTRA MISIÓN", 11f, Color.LTGRAY)
         )
 
-        addButton(root, makeButton("CERRAR SESIÓN", amber) {
+        addButton(root, makeButton("CERRAR SESIÓN", blue) {
             logout()
         })
 
@@ -351,10 +342,9 @@ class MainActivity : Activity() {
     private fun addOption(
         root: LinearLayout,
         title: String,
-        key: String,
-        color: Int
+        key: String
     ) {
-        val card = createCard(root, title, color)
+        val card = createCard(root, title, cyan)
 
         val switch = Switch(this).apply {
             text = "ACTIVAR FUNCIÓN"
@@ -373,6 +363,65 @@ class MainActivity : Activity() {
         }
 
         card.addView(switch)
+    }
+
+    // ANTI-HACK WHATSAPP
+    private fun addWhatsAppOption(root: LinearLayout) {
+        val card = createCard(
+            root,
+            "🛡️ ANTI-HACK WSP",
+            cyan
+        )
+
+        card.addView(
+            label(
+                "HERRAMIENTAS PARA PROTEGER TU WHATSAPP",
+                12f,
+                Color.WHITE,
+                true
+            )
+        )
+
+        addButton(card, makeButton("ABRIR WHATSAPP", blue) {
+            openWhatsApp()
+        })
+
+        addButton(card, makeButton("CONSEJOS DE SEGURIDAD", blue) {
+            showWhatsAppTips()
+        })
+    }
+
+    private fun openWhatsApp() {
+        val launchIntent =
+            packageManager.getLaunchIntentForPackage("com.whatsapp")
+
+        if (launchIntent != null) {
+            try {
+                startActivity(launchIntent)
+            } catch (e: Exception) {
+                toast("No se pudo abrir WhatsApp.")
+            }
+        } else {
+            toast("WhatsApp no está instalado.")
+        }
+    }
+
+    private fun showWhatsAppTips() {
+        AlertDialog.Builder(this)
+            .setTitle("🛡️ ANTI-HACK WSP")
+            .setMessage(
+                "RECOMENDACIONES DE SEGURIDAD:\n\n" +
+                "1. Activa la verificación en dos pasos desde WhatsApp.\n\n" +
+                "2. Nunca compartas tu código de registro.\n\n" +
+                "3. Revisa Dispositivos vinculados y cierra sesiones desconocidas.\n\n" +
+                "4. Protege tu teléfono con bloqueo de pantalla.\n\n" +
+                "5. No abras enlaces sospechosos.\n\n" +
+                "6. Mantén WhatsApp actualizado.\n\n" +
+                "Estos consejos ayudan a proteger tu cuenta, " +
+                "pero no garantizan protección absoluta."
+            )
+            .setPositiveButton("ENTENDIDO", null)
+            .show()
     }
 
     private fun prepareSOS(number: String) {
