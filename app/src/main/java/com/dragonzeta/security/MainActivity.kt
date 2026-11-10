@@ -208,7 +208,7 @@ class MainActivity : Activity() {
             hint = "Usuario"
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
-            singleLine = true
+            isSingleLine = true
             background = panel(cyan)
             setPadding(dp(12), dp(8), dp(12), dp(8))
         }
@@ -219,7 +219,7 @@ class MainActivity : Activity() {
             setTextColor(Color.WHITE)
             inputType = InputType.TYPE_CLASS_TEXT or
                 InputType.TYPE_TEXT_VARIATION_PASSWORD
-            singleLine = true
+            isSingleLine = true
             background = panel(cyan)
             setPadding(dp(12), dp(8), dp(12), dp(8))
         }
@@ -294,7 +294,7 @@ class MainActivity : Activity() {
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
             inputType = InputType.TYPE_CLASS_PHONE
-            setSingleLine(true)
+            isSingleLine = true
             setText(prefs.getString("sos_phone", ""))
             background = panel(cyan)
             setPadding(dp(12), dp(8), dp(12), dp(8))
@@ -340,7 +340,7 @@ class MainActivity : Activity() {
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
         addOption(root, "📍 ANTI-RASTREO", "track")
 
-        // NUEVA FUNCIÓN ANTI-HACK WSP
+        // ANTI-HACK WSP
         addWhatsAppProtection(root)
 
         addButton(root, makeButton("CERRAR SESIÓN", amber) {
@@ -379,7 +379,7 @@ class MainActivity : Activity() {
         card.addView(switch)
     }
 
-    // NUEVO BOTÓN ANTI-HACK WSP
+    // BOTÓN ANTI-HACK WSP
     private fun addWhatsAppProtection(root: LinearLayout) {
         val card = createCard(root, "🛡️ ANTI-HACK WSP", cyan)
 
@@ -391,10 +391,14 @@ class MainActivity : Activity() {
             )
         )
 
-        var active = prefs.getBoolean("whatsapp_protection_active", false)
+        var active = prefs.getBoolean(
+            "whatsapp_protection_active",
+            false
+        )
 
         val button = makeButton(
-            if (active) "ANTI-HACK WSP ACTIVADO" else "ACTIVAR ANTI-HACK WSP",
+            if (active) "ANTI-HACK WSP ACTIVADO"
+            else "ACTIVAR ANTI-HACK WSP",
             if (active) green else cyan
         ) {}
 
