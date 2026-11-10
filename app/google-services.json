@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "165492809631",
+    "project_id": "dragon-zeta",
+    "storage_bucket": "dragon-zeta.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:165492809631:android:1dcc6ca22ddc5a2870a7aa",
+        "android_client_info": {
+          "package_name": "com.dragonzeta.security"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-dfzaGYrQ04aGpM4QjAw1IUqyO4QOzPg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
