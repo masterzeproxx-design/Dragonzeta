@@ -9,8 +9,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.CountDownTimer
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -23,35 +22,17 @@ class MainActivity : Activity() {
     private val cyan = Color.rgb(44, 216, 255)
     private val green = Color.rgb(30, 190, 90)
     private val red = Color.rgb(220, 55, 55)
+    private val amber = Color.rgb(220, 145, 45)
 
     private val prefs by lazy {
         getSharedPreferences("dragon_zeta", MODE_PRIVATE)
     }
 
-    private val handler = Handler(Looper.getMainLooper())
-    private var countdown = 5
+    private var timer: CountDownTimer? = null
     private var pendingNumber = ""
-    private var counting = false
 
     private lateinit var countdownText: TextView
     private lateinit var cancelButton: Button
-
-    private val countdownTask = object : Runnable {
-        override fun run() {
-            if (!counting) return
-
-            countdown--
-            countdownText.text = "Llamada en $countdown segundos"
-
-            if (countdown <= 0) {
-                counting = false
-                countdownText.text = "Iniciando llamada..."
-                callEmergency()
-            } else {
-                handler.postDelayed(this, 1000)
-            }
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,8 +41,9 @@ class MainActivity : Activity() {
         showHome()
     }
 
-    private fun dp(v: Int) =
-        (v * resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
+    }
 
     private fun panel(color: Int): GradientDrawable {
         return GradientDrawable().apply {
@@ -76,16 +58,20 @@ class MainActivity : Activity() {
         size: Float,
         color: Int,
         bold: Boolean = false
-    ) = TextView(this).apply {
-        this.text = text
-        textSize = size
-        setTextColor(color)
-        gravity = Gravity.CENTER
-        if (bold) setTypeface(typeface, Typeface.BOLD)
-        setPadding(dp(5), dp(7), dp(5), dp(7))
+    ): TextView {
+        return TextView(this).apply {
+            this.text = text
+            textSize = size
+            setTextColor(color)
+            gravity = Gravity.CENTER
+            if (bold) {
+                setTypeface(typeface, Typeface.BOLD)
+            }
+            setPadding(dp(5), dp(7), dp(5), dp(7))
+        }
     }
 
-    private fun button(
+    private fun makeButton(
         text: String,
         color: Int,
         action: () -> Unit
@@ -95,136 +81,89 @@ class MainActivity : Activity() {
             setTextColor(Color.WHITE)
             isAllCaps = false
             background = panel(color)
-            setOnClickListener { action() }
+            setOnClickListener {
+                action()
+            }
         }
     }
 
-    private fun base(): LinearLayout {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(18), dp(20), dp(18), dp(20))
-            setBackgroundColor(bg)
-        }
+    private fun addButton(
+        parent: LinearLayout,
+        child: View
+    ) {
+        parent.addView(
+            child,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(54)
+            ).apply {
+                setMargins(0, dp(5), 0, dp(5))
+            }
+        )
     }
 
-    private fun addOption(
+    private fun createCard(
         root: LinearLayout,
         title: String,
-        description: String,
-        key: String
-    ) {
+        color: Int
+    ): LinearLayout {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = panel(cyan)
+            gravity = Gravity.CENTER
+            background = panel(color)
             setPadding(dp(12), dp(12), dp(12), dp(12))
         }
 
-        card.addView(label(title, 20f, cyan, true))
-        card.addView(label(description, 13f, Color.LTGRAY))
+        card.addView(label(title, 20f, color, true))
 
-        var paid = prefs.getBoolean("${key}_paid", false)
-        var active = prefs.getBoolean("${key}_active", false)
-
-        if (!paid) active = false
-
-        val status = label("", 15f, Color.WHITE, true)
-
-        fun updateStatus() {
-            status.text = if (active && paid) {
-                "🟢 SEGURIDAD MÁXIMA"
-            } else if (!paid) {
-                "🔴 OPCIÓN NO PAGADA"
-            } else {
-                "🔴 DESACTIVADO"
+        root.addView(
+            card,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, dp(9), 0, dp(9))
             }
-            status.setTextColor(
-                if (active && paid) green else red
-            )
-        }
-
-        updateStatus()
-        card.addView(status)
-
-        val paymentButton = button("", amberColor()) {
-            paid = !paid
-            if (!paid) active = false
-
-            prefs.edit()
-                .putBoolean("${key}_paid", paid)
-                .putBoolean("${key}_active", active)
-                .apply()
-
-            paymentButtonText()
-        }
-
-        fun refresh() {
-            paymentButton.text =
-                if (paid) "Marcar como NO pagada"
-                else "Marcar como PAGADA"
-
-            updateStatus()
-        }
-
-        fun paymentButtonText() {
-            refresh()
-        }
-
-        card.addView(paymentButton)
-
-        val activationButton = button("", green) {
-            if (!paid) {
-                toast("Esta opción todavía no está pagada.")
-            } else {
-                active = !active
-                prefs.edit()
-                    .putBoolean("${key}_active", active)
-                    .apply()
-                updateStatus()
-                activationButton.text =
-                    if (active) "DESACTIVAR" else "ACTIVAR"
-            }
-        }
-
-        activationButton.text =
-            if (active) "DESACTIVAR" else "ACTIVAR"
-
-        card.addView(activationButton)
-        refresh()
-
-        val lp = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        lp.setMargins(0, dp(8), 0, dp(8))
-        root.addView(card, lp)
+
+        return card
     }
 
-    private fun amberColor() = Color.rgb(220, 145, 45)
-
     private fun showHome() {
-        val root = base()
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(18), dp(20), dp(18), dp(24))
+            setBackgroundColor(bg)
+        }
 
         root.addView(
             label("🐉 DRAGÓN ZETA", 30f, cyan, true)
         )
+
         root.addView(
-            label("SISTEMA DE SEGURIDAD PERSONAL", 13f, Color.WHITE, true)
+            label(
+                "SEGURIDAD PERSONAL",
+                14f,
+                Color.WHITE,
+                true
+            )
         )
 
-        // SOS
-        val sosCard = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = panel(red)
-            setPadding(dp(12), dp(12), dp(12), dp(12))
-        }
+        // SOS EMERGENCIA
 
-        sosCard.addView(
-            label("🆘 SOS – EMERGENCIA", 21f, red, true)
+        val sosCard = createCard(
+            root,
+            "🆘 SOS – EMERGENCIA",
+            red
         )
 
         sosCard.addView(
-            label("Número de emergencia", 14f, Color.WHITE)
+            label(
+                "Número de emergencia",
+                14f,
+                Color.WHITE
+            )
         )
 
         val phone = EditText(this).apply {
@@ -242,81 +181,107 @@ class MainActivity : Activity() {
             phone,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(55)
+                dp(54)
             )
         )
 
-        val save = button("GUARDAR NÚMERO", cyan) {
-            val number = phone.text.toString().trim()
-            if (number.isBlank()) {
-                toast("Escribe un número.")
-            } else {
-                prefs.edit().putString("sos_phone", number).apply()
-                toast("Número guardado.")
+        addButton(
+            sosCard,
+            makeButton("GUARDAR NÚMERO", cyan) {
+                val number = phone.text.toString().trim()
+
+                if (number.isBlank()) {
+                    toast("Escribe un número.")
+                } else {
+                    prefs.edit()
+                        .putString("sos_phone", number)
+                        .apply()
+                    toast("Número guardado.")
+                }
             }
-        }
-        sosCard.addView(save)
+        )
+
+        val sosPaid = prefs.getBoolean("sos_paid", false)
+
+        sosCard.addView(
+            label(
+                if (sosPaid) "🟢 SOS PAGADO"
+                else "🔴 SOS NO PAGADO",
+                15f,
+                if (sosPaid) green else red,
+                true
+            )
+        )
+
+        addButton(
+            sosCard,
+            makeButton(
+                if (sosPaid) "MARCAR COMO NO PAGADO"
+                else "MARCAR COMO PAGADO",
+                amber
+            ) {
+                prefs.edit()
+                    .putBoolean("sos_paid", !sosPaid)
+                    .apply()
+                showHome()
+            }
+        )
 
         countdownText = label(
-            "SOS preparado",
+            "SOS PREPARADO",
             20f,
             Color.WHITE,
             true
         )
         sosCard.addView(countdownText)
 
-        val sosPaid = prefs.getBoolean("sos_paid", false)
+        addButton(
+            sosCard,
+            makeButton("ACTIVAR SOS", red) {
+                val number = phone.text.toString().trim()
 
-        val paySOS = button(
-            if (sosPaid) "Marcar SOS como NO pagado"
-            else "Marcar SOS como PAGADO",
-            amberColor()
-        ) {
-            val newValue = !prefs.getBoolean("sos_paid", false)
-            prefs.edit()
-                .putBoolean("sos_paid", newValue)
-                .apply()
-            showHome()
-        }
-        sosCard.addView(paySOS)
-
-        val startSOS = button("ACTIVAR SOS", red) {
-            val number = phone.text.toString().trim()
-            if (!prefs.getBoolean("sos_paid", false)) {
-                toast("SOS no está pagado.")
-            } else if (number.isBlank()) {
-                toast("Primero guarda un número.")
-            } else if (!counting) {
-                prefs.edit().putString("sos_phone", number).apply()
-                startCountdown(number)
+                if (!prefs.getBoolean("sos_paid", false)) {
+                    toast("La opción SOS no está pagada.")
+                } else if (number.isBlank()) {
+                    toast("Primero escribe un número.")
+                } else {
+                    prefs.edit()
+                        .putString("sos_phone", number)
+                        .apply()
+                    prepareSOS(number)
+                }
             }
-        }
-        sosCard.addView(startSOS)
+        )
 
-        cancelButton = button("CANCELAR", red) {
-            cancelCountdown()
+        cancelButton = makeButton("CANCELAR EMERGENCIA", red) {
+            cancelSOS()
         }
+
         cancelButton.visibility = View.GONE
-        sosCard.addView(cancelButton)
+        addButton(sosCard, cancelButton)
 
-        root.addView(sosCard)
+        // ANTI-CHUPONEO
 
         addOption(
             root,
             "🎙️ ANTI-CHUPONEO",
-            "Control de activación de esta función",
             "spy"
         )
+
+        // ANTI-RASTREO
 
         addOption(
             root,
             "📍 ANTI-RASTREO",
-            "Control de activación de esta función",
             "track"
         )
 
         root.addView(
-            label("DRAGÓN ZETA • VERSIÓN 1.0", 11f, Color.GRAY)
+            label(
+                "DRAGÓN ZETA • VERSIÓN 1.0",
+                11f,
+                Color.GRAY
+            )
         )
 
         val scroll = ScrollView(this)
@@ -324,46 +289,203 @@ class MainActivity : Activity() {
         setContentView(scroll)
     }
 
-    private fun startCountdown(number: String) {
+    private fun addOption(
+        root: LinearLayout,
+        title: String,
+        key: String
+    ) {
+        var paid = prefs.getBoolean("${key}_paid", false)
+        var active = prefs.getBoolean("${key}_active", false)
+
+        if (!paid) {
+            active = false
+            prefs.edit()
+                .putBoolean("${key}_active", false)
+                .apply()
+        }
+
+        val card = createCard(root, title, cyan)
+
+        val status = label(
+            "",
+            16f,
+            Color.WHITE,
+            true
+        )
+        card.addView(status)
+
+        val paymentButton = makeButton(
+            "",
+            amber
+        ) {
+            paid = !paid
+
+            if (!paid) {
+                active = false
+            }
+
+            prefs.edit()
+                .putBoolean("${key}_paid", paid)
+                .putBoolean("${key}_active", active)
+                .apply()
+
+            refresh()
+        }
+
+        card.addView(paymentButton)
+
+        val activationButton = makeButton(
+            "",
+            green
+        ) {
+            if (!paid) {
+                toast("Primero debes pagar esta opción.")
+            } else {
+                active = !active
+
+                prefs.edit()
+                    .putBoolean("${key}_active", active)
+                    .apply()
+
+                refresh()
+            }
+        }
+
+        card.addView(activationButton)
+
+        fun updateStatus() {
+            status.text = when {
+                !paid -> "🔴 OPCIÓN NO PAGADA"
+                active -> "🟢 SEGURIDAD MÁXIMA"
+                else -> "🔴 SEGURIDAD DESACTIVADA"
+            }
+
+            status.setTextColor(
+                if (paid && active) green else red
+            )
+        }
+
+        fun updateButtons() {
+            paymentButton.text =
+                if (paid) "MARCAR COMO NO PAGADA"
+                else "MARCAR COMO PAGADA"
+
+            activationButton.text =
+                if (active) "DESACTIVAR"
+                else "ACTIVAR"
+
+            activationButton.isEnabled = paid
+        }
+
+        fun refreshCard() {
+            updateStatus()
+            updateButtons()
+        }
+
+        // Actualiza los controles después de cada cambio.
+        refreshCard()
+
+        paymentButton.setOnClickListener {
+            paid = !paid
+
+            if (!paid) {
+                active = false
+            }
+
+            prefs.edit()
+                .putBoolean("${key}_paid", paid)
+                .putBoolean("${key}_active", active)
+                .apply()
+
+            refreshCard()
+        }
+
+        activationButton.setOnClickListener {
+            if (!paid) {
+                toast("Primero debes pagar esta opción.")
+            } else {
+                active = !active
+
+                prefs.edit()
+                    .putBoolean("${key}_active", active)
+                    .apply()
+
+                refreshCard()
+            }
+        }
+    }
+
+    private fun prepareSOS(number: String) {
         pendingNumber = number
-        countdown = 5
-        counting = true
 
-        countdownText.text = "Llamada en 5 segundos"
-        cancelButton.visibility = View.VISIBLE
-
-        handler.removeCallbacks(countdownTask)
-        handler.postDelayed(countdownTask, 1000)
-    }
-
-    private fun cancelCountdown() {
-        counting = false
-        handler.removeCallbacks(countdownTask)
-        countdownText.text = "Llamada cancelada"
-        cancelButton.visibility = View.GONE
-        toast("Emergencia cancelada.")
-    }
-
-    private fun callEmergency() {
         if (checkSelfPermission(Manifest.permission.CALL_PHONE)
             == PackageManager.PERMISSION_GRANTED
         ) {
-            try {
-                val intent = Intent(
-                    Intent.ACTION_CALL,
-                    Uri.fromParts("tel", pendingNumber, null)
-                )
-                startActivity(intent)
-            } catch (e: Exception) {
-                toast("No se pudo iniciar la llamada.")
-            }
+            startCountdown()
         } else {
             requestPermissions(
                 arrayOf(Manifest.permission.CALL_PHONE),
                 100
             )
         }
+    }
+
+    private fun startCountdown() {
+        timer?.cancel()
+
+        countdownText.text = "LLAMADA EN 5 SEGUNDOS"
+        cancelButton.visibility = View.VISIBLE
+
+        timer = object : CountDownTimer(5000, 1000) {
+
+            override fun onTick(millisUntilFinished: Long) {
+                val seconds =
+                    (millisUntilFinished + 999) / 1000
+
+                countdownText.text =
+                    "LLAMADA EN $seconds SEGUNDOS"
+            }
+
+            override fun onFinish() {
+                countdownText.text = "INICIANDO LLAMADA"
+                cancelButton.visibility = View.GONE
+                callEmergency()
+            }
+        }.start()
+    }
+
+    private fun cancelSOS() {
+        timer?.cancel()
+        timer = null
+
+        countdownText.text = "EMERGENCIA CANCELADA"
         cancelButton.visibility = View.GONE
+
+        toast("Llamada cancelada.")
+    }
+
+    private fun callEmergency() {
+        if (pendingNumber.isBlank()) {
+            toast("No hay número de emergencia.")
+            return
+        }
+
+        if (checkSelfPermission(Manifest.permission.CALL_PHONE)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            toast("Falta el permiso para llamar.")
+            return
+        }
+
+        try {
+            val intent = Intent(
+                Intent.ACTION_CALL,
+                Uri.parse("tel:${Uri.encode(pendingNumber)}")
+            )
+            startActivity(intent)
+        } catch (e: Exception) {
+            toast("No se pudo iniciar la llamada.")
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -372,29 +494,34 @@ class MainActivity : Activity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(
-            requestCode, permissions, grantResults
+            requestCode,
+            permissions,
+            grantResults
         )
 
         if (requestCode == 100) {
-            if (grantResults.isNotEmpty() &&
+            if (
+                grantResults.isNotEmpty() &&
                 grantResults[0] == PackageManager.PERMISSION_GRANTED
             ) {
-                callEmergency()
+                startCountdown()
             } else {
                 toast("Permiso de llamada denegado.")
-                countdownText.text = "Llamada no realizada"
+                countdownText.text = "SOS NO DISPONIBLE"
             }
         }
     }
 
     private fun toast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        Toast.makeText(
+            this,
+            message,
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     override fun onDestroy() {
-        counting = false
-        handler.removeCallbacks(countdownTask)
+        timer?.cancel()
         super.onDestroy()
     }
-}
 }
