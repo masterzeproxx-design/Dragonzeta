@@ -254,7 +254,6 @@ class MainActivity : Activity() {
 
         val root = createRoot()
 
-        // ENCABEZADO
         addHeader(root)
 
         root.addView(
@@ -264,7 +263,6 @@ class MainActivity : Activity() {
             label("CENTRO DE SEGURIDAD PERSONAL", 11f, cyan, true)
         )
 
-        // PERFIL DEL USUARIO
         val profile = createCard(root, "👤 PERFIL DE USUARIO", cyan)
 
         profile.addView(
@@ -277,7 +275,6 @@ class MainActivity : Activity() {
             label("ESTADO: SISTEMA DISPONIBLE", 12f, Color.LTGRAY)
         )
 
-        // ESTADO GENERAL
         val statusCard = createCard(root, "🛡️ PROTECCIÓN", green)
         statusCard.addView(
             label("DRAGÓN ZETA ESTÁ LISTO", 16f, Color.WHITE, true)
@@ -286,7 +283,6 @@ class MainActivity : Activity() {
             label("Controla tus opciones desde este panel", 12f, Color.LTGRAY)
         )
 
-        // EMERGENCIA SOS
         val sosCard = createCard(root, "🆘 BOTÓN SOS", red)
 
         sosCard.addView(
@@ -341,11 +337,12 @@ class MainActivity : Activity() {
         cancelButton.visibility = View.GONE
         addButton(sosCard, cancelButton)
 
-        // FUNCIONES DE SEGURIDAD
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
         addOption(root, "📍 ANTI-RASTREO", "track")
 
-        // CERRAR SESIÓN
+        // NUEVA FUNCIÓN ANTI-HACK WSP
+        addWhatsAppProtection(root)
+
         addButton(root, makeButton("CERRAR SESIÓN", amber) {
             logout()
         })
@@ -380,6 +377,52 @@ class MainActivity : Activity() {
         }
 
         card.addView(switch)
+    }
+
+    // NUEVO BOTÓN ANTI-HACK WSP
+    private fun addWhatsAppProtection(root: LinearLayout) {
+        val card = createCard(root, "🛡️ ANTI-HACK WSP", cyan)
+
+        card.addView(
+            label(
+                "Protección y seguridad de WhatsApp",
+                13f,
+                Color.LTGRAY
+            )
+        )
+
+        var active = prefs.getBoolean("whatsapp_protection_active", false)
+
+        val button = makeButton(
+            if (active) "ANTI-HACK WSP ACTIVADO" else "ACTIVAR ANTI-HACK WSP",
+            if (active) green else cyan
+        ) {}
+
+        button.setOnClickListener {
+            active = !active
+
+            prefs.edit()
+                .putBoolean("whatsapp_protection_active", active)
+                .apply()
+
+            button.text = if (active) {
+                "ANTI-HACK WSP ACTIVADO"
+            } else {
+                "ACTIVAR ANTI-HACK WSP"
+            }
+
+            button.background = GradientDrawable().apply {
+                setColor(if (active) green else cyan)
+                cornerRadius = dp(12).toFloat()
+            }
+
+            toast(
+                if (active) "ANTI-HACK WSP activado."
+                else "ANTI-HACK WSP desactivado."
+            )
+        }
+
+        addButton(card, button)
     }
 
     private fun prepareSOS(number: String) {
