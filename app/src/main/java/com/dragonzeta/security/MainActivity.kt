@@ -44,6 +44,9 @@ class MainActivity : Activity() {
     private var licenseValid = false
     private var isAdmin = false
 
+    // Guarda el error para mostrarlo permanentemente en pantalla.
+    private var firebaseErrorMessage: String? = null
+
     private lateinit var countdownText: TextView
     private lateinit var cancelButton: Button
 
@@ -198,7 +201,10 @@ class MainActivity : Activity() {
                 toast("Completa correo y contraseña.")
             } else {
                 auth.signInWithEmailAndPassword(e, p)
-                    .addOnSuccessListener { checkAccess() }
+                    .addOnSuccessListener {
+                        firebaseErrorMessage = null
+                        checkAccess()
+                    }
                     .addOnFailureListener {
                         toast("No se pudo iniciar sesión. Revisa tus datos.")
                     }
@@ -231,6 +237,17 @@ class MainActivity : Activity() {
             )
         )
 
+        // El error queda escrito en pantalla y no desaparece.
+        firebaseErrorMessage?.let { error ->
+            val errorView = label(
+                "ERROR FIREBASE:\n$error",
+                15f,
+                Color.RED,
+                true
+            )
+            root.addView(errorView)
+        }
+
         showScreen(root)
     }
 
@@ -245,6 +262,7 @@ class MainActivity : Activity() {
         if (user.uid == adminUid) {
             db.collection("admins").document(user.uid).get()
                 .addOnSuccessListener { document ->
+                    firebaseErrorMessage = null
                     isAdmin = document.exists()
 
                     if (isAdmin) {
@@ -256,7 +274,8 @@ class MainActivity : Activity() {
                     }
                 }
                 .addOnFailureListener { error ->
-                    toast("Error Firebase: ${error.message}")
+                    firebaseErrorMessage =
+                        error.message ?: error.toString()
                     showLogin()
                 }
 
@@ -288,9 +307,7 @@ class MainActivity : Activity() {
         root.addView(label("SEGURIDAD PERSONAL", 14f, Color.WHITE, true))
 
         val user = auth.currentUser
-        root.addView(
-            label(user?.email ?: "", 12f, Color.LTGRAY)
-        )
+        root.addView(label(user?.email ?: "", 12f, Color.LTGRAY))
 
         if (isAdmin) {
             root.addView(label("🛡️ ADMINISTRADOR", 16f, green, true))
@@ -624,6 +641,7 @@ class MainActivity : Activity() {
         auth.signOut()
         licenseValid = false
         isAdmin = false
+        firebaseErrorMessage = null
         showLogin()
     }
 
