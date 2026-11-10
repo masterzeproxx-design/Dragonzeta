@@ -19,11 +19,11 @@ import android.widget.*
 
 class MainActivity : Activity() {
 
-    private val bg = Color.rgb(4, 10, 25)
-    private val panelColor = Color.rgb(10, 22, 43)
-    private val cyan = Color.rgb(0, 220, 255)
-    private val green = Color.rgb(0, 230, 130)
-    private val red = Color.rgb(255, 55, 75)
+    private val bg = Color.rgb(3, 7, 19)
+    private val panelColor = Color.rgb(7, 17, 35)
+    private val cyan = Color.rgb(0, 190, 255)
+    private val green = Color.rgb(0, 235, 115)
+    private val red = Color.rgb(255, 45, 65)
     private val amber = Color.rgb(255, 180, 40)
 
     private val accessUser = "ZEPROXX"
@@ -35,6 +35,7 @@ class MainActivity : Activity() {
 
     private var loggedIn = false
     private var countdown: CountDownTimer? = null
+
     private lateinit var countdownText: TextView
     private lateinit var cancelButton: Button
 
@@ -50,8 +51,8 @@ class MainActivity : Activity() {
     private fun panel(color: Int): GradientDrawable {
         return GradientDrawable().apply {
             setColor(panelColor)
-            setStroke(dp(1), color)
-            cornerRadius = dp(15).toFloat()
+            setStroke(dp(2), color)
+            cornerRadius = dp(16).toFloat()
         }
     }
 
@@ -66,10 +67,8 @@ class MainActivity : Activity() {
             textSize = size
             setTextColor(color)
             gravity = Gravity.CENTER
-            if (bold) {
-                typeface = Typeface.DEFAULT_BOLD
-            }
-            setPadding(dp(8), dp(7), dp(8), dp(7))
+            if (bold) typeface = Typeface.DEFAULT_BOLD
+            setPadding(dp(7), dp(7), dp(7), dp(7))
         }
     }
 
@@ -85,7 +84,7 @@ class MainActivity : Activity() {
             typeface = Typeface.DEFAULT_BOLD
             background = GradientDrawable().apply {
                 setColor(color)
-                cornerRadius = dp(12).toFloat()
+                cornerRadius = dp(13).toFloat()
             }
             setOnClickListener { action() }
         }
@@ -98,7 +97,7 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dp(52)
             ).apply {
-                setMargins(dp(5), dp(7), dp(5), dp(7))
+                setMargins(dp(4), dp(7), dp(4), dp(7))
             }
         )
     }
@@ -106,8 +105,8 @@ class MainActivity : Activity() {
     private fun createRoot(): LinearLayout {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            setPadding(dp(18), dp(18), dp(18), dp(25))
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(14), dp(12), dp(14), dp(22))
             setBackgroundColor(bg)
         }
     }
@@ -132,7 +131,7 @@ class MainActivity : Activity() {
     ): LinearLayout {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(12), dp(12), dp(12), dp(12))
+            setPadding(dp(12), dp(10), dp(12), dp(12))
             background = panel(color)
         }
 
@@ -142,7 +141,7 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(0, dp(9), 0, dp(9))
+                setMargins(0, dp(8), 0, dp(8))
             }
         )
 
@@ -150,36 +149,7 @@ class MainActivity : Activity() {
         return card
     }
 
-    private fun addHeader(root: LinearLayout) {
-        val header = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(dp(8), dp(12), dp(8), dp(12))
-        }
-
-        val name = label("🐉 DRAGÓN ZETA", 23f, cyan, true)
-        header.addView(
-            name,
-            LinearLayout.LayoutParams(0, dp(55), 1f)
-        )
-
-        val paid = label("PAGADO", 12f, Color.BLACK, true)
-        paid.background = GradientDrawable().apply {
-            setColor(green)
-            cornerRadius = dp(20).toFloat()
-        }
-        header.addView(paid)
-
-        root.addView(header)
-    }
-
-    private fun showLogin() {
-        val root = createRoot()
-
-        root.addView(label("🐉 DRAGÓN ZETA", 27f, cyan, true))
-        root.addView(label("SEGURIDAD PERSONAL", 13f, green, true))
-
-        val image = ImageView(this)
+    private fun addBanner(root: LinearLayout) {
         val imageId = resources.getIdentifier(
             "dragon_zeta_login_header",
             "drawable",
@@ -187,16 +157,34 @@ class MainActivity : Activity() {
         )
 
         if (imageId != 0) {
+            val image = ImageView(this)
             image.setImageResource(imageId)
-            image.scaleType = ImageView.ScaleType.FIT_CENTER
+            image.scaleType = ImageView.ScaleType.CENTER_CROP
+
             root.addView(
                 image,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    dp(220)
-                )
+                    dp(185)
+                ).apply {
+                    setMargins(0, 0, 0, dp(5))
+                }
+            )
+        } else {
+            root.addView(
+                label("🐉 DRAGÓN ZETA", 27f, cyan, true)
             )
         }
+
+        root.addView(
+            label("SEGURIDAD PERSONAL", 14f, green, true)
+        )
+    }
+
+    private fun showLogin() {
+        val root = createRoot()
+
+        addBanner(root)
 
         val card = createCard(root, "ACCESO DE USUARIO", cyan)
 
@@ -235,7 +223,10 @@ class MainActivity : Activity() {
             }
         })
 
-        root.addView(label("SISTEMA DE PROTECCIÓN", 11f, Color.GRAY))
+        root.addView(
+            label("TU PRIVACIDAD, NUESTRA MISIÓN", 12f, cyan, true)
+        )
+
         showScreen(root)
     }
 
@@ -247,35 +238,39 @@ class MainActivity : Activity() {
 
         val root = createRoot()
 
-        addHeader(root)
+        // ENCABEZADO DEL DRAGÓN
+        addBanner(root)
 
-        root.addView(label("PANEL DE CONTROL", 22f, Color.WHITE, true))
+        val paid = label("✓ PAGADO  •  LICENCIA ACTIVA", 13f, green, true)
+        paid.background = panel(green)
         root.addView(
-            label("CENTRO DE SEGURIDAD PERSONAL", 11f, cyan, true)
-        )
-
-        val profile = createCard(root, "👤 PERFIL DE USUARIO", cyan)
-        profile.addView(label("ZEPROXX", 23f, Color.WHITE, true))
-        profile.addView(label("USUARIO AUTORIZADO", 13f, green, true))
-        profile.addView(
-            label("ESTADO: SISTEMA DISPONIBLE", 12f, Color.LTGRAY)
-        )
-
-        val statusCard = createCard(root, "🛡️ PROTECCIÓN", green)
-        statusCard.addView(
-            label("DRAGÓN ZETA ESTÁ LISTO", 16f, Color.WHITE, true)
-        )
-        statusCard.addView(
-            label(
-                "Controla tus opciones desde este panel",
-                12f,
-                Color.LTGRAY
+            paid,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(42)
             )
         )
 
-        val sosCard = createCard(root, "🆘 BOTÓN SOS", red)
+        // PERFIL Y ESTADO
+        val profile = createCard(root, "USUARIO AUTORIZADO", cyan)
+
+        profile.addView(
+            label("ZEPROXX", 25f, Color.WHITE, true)
+        )
+
+        profile.addView(
+            label("● SISTEMA DISPONIBLE", 15f, green, true)
+        )
+
+        profile.addView(
+            label("DRAGÓN ZETA • PROTECCIÓN PERSONAL", 11f, cyan)
+        )
+
+        // SOS
+        val sosCard = createCard(root, "🆘 SOS • EMERGENCIA", red)
+
         sosCard.addView(
-            label("Número de emergencia", 14f, Color.WHITE)
+            label("BOTÓN DE EMERGENCIA", 19f, Color.WHITE, true)
         )
 
         val phone = EditText(this).apply {
@@ -293,17 +288,18 @@ class MainActivity : Activity() {
             phone,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(54)
+                dp(52)
             )
         )
 
         addButton(sosCard, makeButton("GUARDAR NÚMERO", cyan) {
             val number = phone.text.toString().trim()
+
             if (number.isBlank()) {
                 toast("Escribe un número.")
             } else {
                 prefs.edit().putString("sos_phone", number).apply()
-                toast("Número guardado.")
+                toast("Número guardado correctamente.")
             }
         })
 
@@ -312,6 +308,7 @@ class MainActivity : Activity() {
 
         addButton(sosCard, makeButton("ACTIVAR SOS", red) {
             val number = phone.text.toString().trim()
+
             if (number.isBlank()) {
                 toast("Primero escribe un número.")
             } else {
@@ -320,22 +317,33 @@ class MainActivity : Activity() {
             }
         })
 
-        cancelButton = makeButton("CANCELAR EMERGENCIA", red) {
+        cancelButton = makeButton("CANCELAR EMERGENCIA", amber) {
             cancelSOS()
         }
+
         cancelButton.visibility = View.GONE
         addButton(sosCard, cancelButton)
 
-        addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
-        addOption(root, "📍 ANTI-RASTREO", "track")
+        // OPCIONES DE SEGURIDAD
+        addOption(root, "🎙️ ANTI-CHUPONEO", "spy", cyan)
+        addOption(root, "📍 ANTI-RASTREO", "track", green)
+
+        // PIE DE PANTALLA
+        root.addView(
+            label("🐉 DRAGÓN ZETA", 22f, cyan, true)
+        )
+
+        root.addView(
+            label("VERSIÓN 1.0", 13f, green, true)
+        )
+
+        root.addView(
+            label("TU PRIVACIDAD, NUESTRA MISIÓN", 11f, Color.LTGRAY)
+        )
 
         addButton(root, makeButton("CERRAR SESIÓN", amber) {
             logout()
         })
-
-        root.addView(
-            label("🐉 DRAGÓN ZETA • VERSIÓN 1.0", 11f, Color.GRAY)
-        )
 
         showScreen(root)
     }
@@ -343,12 +351,13 @@ class MainActivity : Activity() {
     private fun addOption(
         root: LinearLayout,
         title: String,
-        key: String
+        key: String,
+        color: Int
     ) {
-        val card = createCard(root, title, cyan)
+        val card = createCard(root, title, color)
 
         val switch = Switch(this).apply {
-            text = "Activar función"
+            text = "ACTIVAR FUNCIÓN"
             textSize = 14f
             setTextColor(Color.WHITE)
             isChecked = prefs.getBoolean("${key}_active", false)
@@ -356,6 +365,7 @@ class MainActivity : Activity() {
 
         switch.setOnCheckedChangeListener { _, checked ->
             prefs.edit().putBoolean("${key}_active", checked).apply()
+
             toast(
                 if (checked) "Opción activada."
                 else "Opción desactivada."
@@ -374,6 +384,7 @@ class MainActivity : Activity() {
         cancelButton.visibility = View.VISIBLE
 
         countdown = object : CountDownTimer(5000, 1000) {
+
             override fun onTick(millisUntilFinished: Long) {
                 countdownText.text =
                     "LLAMANDO EN ${millisUntilFinished / 1000 + 1}..."
@@ -431,6 +442,7 @@ class MainActivity : Activity() {
                 grantResults[0] == PackageManager.PERMISSION_GRANTED
             ) {
                 val number = prefs.getString("sos_phone", "") ?: ""
+
                 if (number.isNotBlank()) {
                     try {
                         startActivity(
