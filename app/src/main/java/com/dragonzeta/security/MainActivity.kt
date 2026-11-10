@@ -5,6 +5,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -14,8 +15,11 @@ import android.os.CountDownTimer
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.LinearInterpolator
 import android.widget.*
 import android.text.InputType
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 
 class MainActivity : Activity() {
 
@@ -37,6 +41,9 @@ class MainActivity : Activity() {
     private var countdown: CountDownTimer? = null
     private lateinit var countdownText: TextView
     private lateinit var cancelButton: Button
+
+    private var whatsappScanTimer: CountDownTimer? = null
+    private var whatsappScanAnimator: ObjectAnimator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -340,7 +347,6 @@ class MainActivity : Activity() {
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
         addOption(root, "📍 ANTI-RASTREO", "track")
 
-        // ANTI-HACK WSP
         addWhatsAppProtection(root)
 
         addButton(root, makeButton("CERRAR SESIÓN", amber) {
@@ -379,21 +385,81 @@ class MainActivity : Activity() {
         card.addView(switch)
     }
 
-    // BOTÓN ANTI-HACK WSP
+    // ANTI-HACK WSP CON ESCUDO Y ANIMACIÓN
+
     private fun addWhatsAppProtection(root: LinearLayout) {
+
         val card = createCard(root, "🛡️ ANTI-HACK WSP", cyan)
 
         card.addView(
             label(
-                "Protección y seguridad de WhatsApp",
+                "Sistema visual de protección de WhatsApp",
                 13f,
                 Color.LTGRAY
             )
         )
 
-        var active = prefs.getBoolean(
+        val active = prefs.getBoolean(
             "whatsapp_protection_active",
             false
+        )
+
+        val shield = label(
+            "🛡️",
+            55f,
+            if (active) green else cyan,
+            true
+        )
+
+        card.addView(
+            shield,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(95)
+            )
+        )
+
+        val status = label(
+            if (active) "CUENTA PROTEGIDA"
+            else "SISTEMA EN ESPERA",
+            19f,
+            if (active) green else cyan,
+            true
+        )
+
+        card.addView(status)
+
+        val detail = label(
+            if (active) "Protección visual activada"
+            else "Presiona el botón para comenzar",
+            12f,
+            Color.LTGRAY
+        )
+
+        card.addView(detail)
+
+        val progress = ProgressBar(
+            this,
+            null,
+            android.R.attr.progressBarStyleHorizontal
+        ).apply {
+            max = 100
+            this.progress = if (active) 100 else 0
+            progressTintList = ColorStateList.valueOf(
+                if (active) green else cyan
+            )
+            progressBackgroundTintList =
+                ColorStateList.valueOf(Color.rgb(35, 48, 65))
+        }
+
+        card.addView(
+            progress,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(12)
+            ).apply {
+                setMargins(dp(12), dp(12), dp(12), dp(12))
+            }
         )
 
         val button = makeButton(
@@ -402,31 +468,138 @@ class MainActivity : Activity() {
             if (active) green else cyan
         ) {}
 
-        button.setOnClickListener {
-            active = !active
-
-            prefs.edit()
-                .putBoolean("whatsapp_protection_active", active)
-                .apply()
-
-            button.text = if (active) {
-                "ANTI-HACK WSP ACTIVADO"
-            } else {
-                "ACTIVAR ANTI-HACK WSP"
-            }
-
-            button.background = GradientDrawable().apply {
-                setColor(if (active) green else cyan)
-                cornerRadius = dp(12).toFloat()
-            }
-
-            toast(
-                if (active) "ANTI-HACK WSP activado."
-                else "ANTI-HACK WSP desactivado."
-            )
-        }
-
         addButton(card, button)
+
+        card.addView(
+            label(
+                "La revisión es una simulación visual. " +
+                    "No detecta ataques reales ni modifica WhatsApp.",
+                10f,
+                Color.GRAY
+            )
+        )
+
+        button.setOnClickListener {
+
+            if (whatsappScanTimer != null) {
+                return@setOnClickListener
+            }
+
+            val currentlyActive = prefs.getBoolean(
+                "whatsapp_protection_active",
+                false
+            )
+
+            if (currentlyActive) {
+
+                prefs.edit()
+                    .putBoolean("whatsapp_protection_active", false)
+                    .apply()
+
+                shield.animate().cancel()
+                shield.rotation = 0f
+                shield.setTextColor(cyan)
+
+                status.text = "PROTECCIÓN DESACTIVADA"
+                status.setTextColor(cyan)
+
+                detail.text = "Sistema en espera"
+                progress.progress = 0
+                progress.progressTintList =
+                    ColorStateList.valueOf(cyan)
+
+                button.text = "ACTIVAR ANTI-HACK WSP"
+                button.background = GradientDrawable().apply {
+                    setColor(cyan)
+                    cornerRadius = dp(12).toFloat()
+                }
+
+                toast("ANTI-HACK WSP desactivado.")
+
+            } else {
+
+                button.isEnabled = false
+                button.text = "REVISANDO CUENTA..."
+
+                status.text = "REVISANDO CUENTA..."
+                status.setTextColor(cyan)
+
+                detail.text = "Analizando estado de protección..."
+                shield.setTextColor(cyan)
+
+                progress.progress = 0
+                progress.progressTintList =
+                    ColorStateList.valueOf(cyan)
+
+                whatsappScanAnimator =
+                    ObjectAnimator.ofFloat(
+                        shield,
+                        View.ROTATION,
+                        0f,
+                        360f
+                    ).apply {
+                        duration = 1200
+                        repeatCount = ValueAnimator.INFINITE
+                        interpolator = LinearInterpolator()
+                        start()
+                    }
+
+                whatsappScanTimer =
+                    object : CountDownTimer(5000, 100) {
+
+                        override fun onTick(millisUntilFinished: Long) {
+
+                            val percent =
+                                ((5000L - millisUntilFinished) * 100 / 5000)
+                                    .toInt()
+
+                            progress.progress = percent
+
+                            status.text = "REVISANDO CUENTA..."
+                            detail.text =
+                                "Verificando protección... $percent%"
+                        }
+
+                        override fun onFinish() {
+
+                            whatsappScanTimer = null
+
+                            whatsappScanAnimator?.cancel()
+                            whatsappScanAnimator = null
+
+                            shield.rotation = 0f
+                            shield.setTextColor(green)
+
+                            progress.progress = 100
+                            progress.progressTintList =
+                                ColorStateList.valueOf(green)
+
+                            status.text = "CUENTA PROTEGIDA"
+                            status.setTextColor(green)
+
+                            detail.text =
+                                "PROTECCIÓN ACTIVADA CORRECTAMENTE"
+
+                            prefs.edit()
+                                .putBoolean(
+                                    "whatsapp_protection_active",
+                                    true
+                                )
+                                .apply()
+
+                            button.text = "ANTI-HACK WSP ACTIVADO"
+                            button.isEnabled = true
+                            button.background = GradientDrawable().apply {
+                                setColor(green)
+                                cornerRadius = dp(12).toFloat()
+                            }
+
+                            toast("¡CUENTA PROTEGIDA!")
+                        }
+
+                    }.start()
+            }
+        }
     }
 
     private fun prepareSOS(number: String) {
@@ -516,6 +689,13 @@ class MainActivity : Activity() {
     private fun logout() {
         countdown?.cancel()
         countdown = null
+
+        whatsappScanTimer?.cancel()
+        whatsappScanTimer = null
+
+        whatsappScanAnimator?.cancel()
+        whatsappScanAnimator = null
+
         loggedIn = false
         showLogin()
     }
@@ -527,6 +707,13 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         countdown?.cancel()
         countdown = null
+
+        whatsappScanTimer?.cancel()
+        whatsappScanTimer = null
+
+        whatsappScanAnimator?.cancel()
+        whatsappScanAnimator = null
+
         super.onDestroy()
     }
 }
