@@ -45,6 +45,10 @@ class MainActivity : Activity() {
     private var whatsappScanTimer: CountDownTimer? = null
     private var whatsappScanAnimator: ObjectAnimator? = null
 
+    // ANTI-CHUPONEO: CAPA TRANSPARENTE
+    private var overlayTimer: CountDownTimer? = null
+    private var overlayFrame: FrameLayout? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         showLogin()
@@ -119,9 +123,11 @@ class MainActivity : Activity() {
         }
     }
 
+    // CONTENEDOR QUE PERMITE MOSTRAR LA CAPA ENCIMA DEL MENÚ
     private fun showScreen(root: LinearLayout) {
         val scroll = ScrollView(this)
         scroll.setBackgroundColor(bg)
+
         scroll.addView(
             root,
             ViewGroup.LayoutParams(
@@ -129,7 +135,20 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
         )
-        setContentView(scroll)
+
+        val frame = FrameLayout(this)
+        frame.setBackgroundColor(bg)
+
+        frame.addView(
+            scroll,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        overlayFrame = frame
+        setContentView(frame)
     }
 
     private fun createCard(
@@ -165,6 +184,7 @@ class MainActivity : Activity() {
         }
 
         val name = label("🐉 DRAGÓN ZETA", 23f, cyan, true)
+
         header.addView(
             name,
             LinearLayout.LayoutParams(0, dp(55), 1f)
@@ -175,8 +195,8 @@ class MainActivity : Activity() {
             setColor(green)
             cornerRadius = dp(20).toFloat()
         }
-        header.addView(paid)
 
+        header.addView(paid)
         root.addView(header)
     }
 
@@ -186,11 +206,13 @@ class MainActivity : Activity() {
         root.addView(
             label("🐉 DRAGÓN ZETA", 27f, cyan, true)
         )
+
         root.addView(
             label("SEGURIDAD PERSONAL", 13f, green, true)
         )
 
         val image = ImageView(this)
+
         val imageId = resources.getIdentifier(
             "dragon_zeta_login_header",
             "drawable",
@@ -200,6 +222,7 @@ class MainActivity : Activity() {
         if (imageId != 0) {
             image.setImageResource(imageId)
             image.scaleType = ImageView.ScaleType.FIT_CENTER
+
             root.addView(
                 image,
                 LinearLayout.LayoutParams(
@@ -266,6 +289,7 @@ class MainActivity : Activity() {
         root.addView(
             label("PANEL DE CONTROL", 22f, Color.WHITE, true)
         )
+
         root.addView(
             label("CENTRO DE SEGURIDAD PERSONAL", 11f, cyan, true)
         )
@@ -275,19 +299,27 @@ class MainActivity : Activity() {
         profile.addView(
             label("ZEPROXX", 23f, Color.WHITE, true)
         )
+
         profile.addView(
             label("USUARIO AUTORIZADO", 13f, green, true)
         )
+
         profile.addView(
             label("ESTADO: SISTEMA DISPONIBLE", 12f, Color.LTGRAY)
         )
 
         val statusCard = createCard(root, "🛡️ PROTECCIÓN", green)
+
         statusCard.addView(
             label("DRAGÓN ZETA ESTÁ LISTO", 16f, Color.WHITE, true)
         )
+
         statusCard.addView(
-            label("Controla tus opciones desde este panel", 12f, Color.LTGRAY)
+            label(
+                "Controla tus opciones desde este panel",
+                12f,
+                Color.LTGRAY
+            )
         )
 
         val sosCard = createCard(root, "🆘 BOTÓN SOS", red)
@@ -317,6 +349,7 @@ class MainActivity : Activity() {
 
         addButton(sosCard, makeButton("GUARDAR NÚMERO", cyan) {
             val number = phone.text.toString().trim()
+
             if (number.isBlank()) {
                 toast("Escribe un número.")
             } else {
@@ -330,6 +363,7 @@ class MainActivity : Activity() {
 
         addButton(sosCard, makeButton("ACTIVAR SOS", red) {
             val number = phone.text.toString().trim()
+
             if (number.isBlank()) {
                 toast("Primero escribe un número.")
             } else {
@@ -341,10 +375,14 @@ class MainActivity : Activity() {
         cancelButton = makeButton("CANCELAR EMERGENCIA", red) {
             cancelSOS()
         }
+
         cancelButton.visibility = View.GONE
         addButton(sosCard, cancelButton)
 
+        // ANTI-CHUPONEO AHORA ABRE LA CAPA DE CÓDIGOS
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
+
+        // ANTI-RASTREO CONSERVA SU INTERRUPTOR
         addOption(root, "📍 ANTI-RASTREO", "track")
 
         addWhatsAppProtection(root)
@@ -360,6 +398,7 @@ class MainActivity : Activity() {
         showScreen(root)
     }
 
+    // OPCIONES DEL MENÚ
     private fun addOption(
         root: LinearLayout,
         title: String,
@@ -367,26 +406,255 @@ class MainActivity : Activity() {
     ) {
         val card = createCard(root, title, cyan)
 
-        val switch = Switch(this).apply {
-            text = "Activar función"
-            textSize = 14f
-            setTextColor(Color.WHITE)
-            isChecked = prefs.getBoolean("${key}_active", false)
-        }
+        if (key == "spy") {
 
-        switch.setOnCheckedChangeListener { _, checked ->
-            prefs.edit().putBoolean("${key}_active", checked).apply()
-            toast(
-                if (checked) "Opción activada."
-                else "Opción desactivada."
+            card.addView(
+                label(
+                    "Análisis visual de seguridad de red",
+                    12f,
+                    Color.LTGRAY
+                )
             )
+
+            addButton(
+                card,
+                makeButton("INICIAR ESCANEO", green) {
+                    showAntiChuponeoOverlay()
+                }
+            )
+
+        } else {
+
+            val switch = Switch(this).apply {
+                text = "Activar función"
+                textSize = 14f
+                setTextColor(Color.WHITE)
+                isChecked = prefs.getBoolean("${key}_active", false)
+            }
+
+            switch.setOnCheckedChangeListener { _, checked ->
+                prefs.edit()
+                    .putBoolean("${key}_active", checked)
+                    .apply()
+
+                toast(
+                    if (checked) "Opción activada."
+                    else "Opción desactivada."
+                )
+            }
+
+            card.addView(switch)
+        }
+    }
+
+    // CAPA TRANSPARENTE DE CIBERSEGURIDAD
+    private fun showAntiChuponeoOverlay() {
+
+        val frame = overlayFrame ?: return
+
+        if (overlayTimer != null) return
+
+        val overlay = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(20), dp(25), dp(20), dp(25))
+
+            // FONDO SEMITRANSPARENTE:
+            // EL MENÚ SIGUE VISIBLE DETRÁS
+            setBackgroundColor(Color.argb(190, 1, 7, 15))
         }
 
-        card.addView(switch)
+        val title = label(
+            "🐉 DRAGÓN ZETA",
+            24f,
+            cyan,
+            true
+        )
+
+        overlay.addView(title)
+
+        overlay.addView(
+            label(
+                "CYBER SECURITY TERMINAL",
+                13f,
+                green,
+                true
+            )
+        )
+
+        overlay.addView(
+            label(
+                "NETWORK ANALYSIS • SYSTEM SCAN",
+                10f,
+                Color.LTGRAY
+            )
+        )
+
+        val codeView = TextView(this).apply {
+            textSize = 12f
+            typeface = Typeface.MONOSPACE
+            setTextColor(green)
+            gravity = Gravity.START
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            setLineSpacing(dp(4).toFloat(), 1f)
+            background = GradientDrawable().apply {
+                setColor(Color.argb(90, 0, 20, 15))
+                setStroke(dp(1), Color.argb(150, 0, 230, 130))
+                cornerRadius = dp(12).toFloat()
+            }
+        }
+
+        overlay.addView(
+            codeView,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            ).apply {
+                setMargins(0, dp(18), 0, dp(15))
+            }
+        )
+
+        val status = label(
+            "INICIANDO ANÁLISIS...",
+            17f,
+            cyan,
+            true
+        )
+
+        overlay.addView(status)
+
+        val progress = ProgressBar(
+            this,
+            null,
+            android.R.attr.progressBarStyleHorizontal
+        ).apply {
+            max = 100
+            progress = 0
+            progressTintList = ColorStateList.valueOf(green)
+            progressBackgroundTintList =
+                ColorStateList.valueOf(Color.DKGRAY)
+        }
+
+        overlay.addView(
+            progress,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(12)
+            ).apply {
+                setMargins(dp(10), dp(12), dp(10), dp(15))
+            }
+        )
+
+        val closeButton = makeButton("RED ASEGURADA", green) {
+            closeAntiChuponeoOverlay()
+        }
+
+        closeButton.visibility = View.GONE
+
+        addButton(overlay, closeButton)
+
+        overlay.addView(
+            label(
+                "DIAGNÓSTICO VISUAL SIMULADO",
+                10f,
+                Color.LTGRAY
+            )
+        )
+
+        frame.addView(
+            overlay,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        val codeLines = arrayOf(
+            "root@dragonzeta:~$ ./network_scan.sh",
+            "",
+            "[INIT] Loading security modules...",
+            "[ OK ] Firewall module initialized",
+            "[SCAN] Inspecting network interfaces...",
+            "[INFO] Checking connection integrity",
+            "[SCAN] Reviewing access permissions...",
+            "[ OK ] Secure protocols verified",
+            "[INFO] Analyzing network traffic...",
+            "[SCAN] Running security diagnostics...",
+            "[ OK ] Verification completed",
+            "",
+            "01001001 01001110 01000110 01001111",
+            "0x4E4554 0x534543 0x555245",
+            "TCP_CHECK: PASS",
+            "FIREWALL_STATUS: ACTIVE",
+            "NETWORK_INTEGRITY: VERIFIED",
+            "",
+            "root@dragonzeta:~$ scan_complete"
+        )
+
+        codeView.text = codeLines.take(3).joinToString("\n")
+
+        status.text = "ANALIZANDO RED..."
+
+        overlayTimer = object : CountDownTimer(7000, 500) {
+
+            override fun onTick(millisUntilFinished: Long) {
+
+                val elapsed = 7000L - millisUntilFinished
+
+                val percent = (elapsed * 100 / 7000).toInt()
+                progress.progress = percent
+
+                val visibleLines = (3 + elapsed / 300)
+                    .toInt()
+                    .coerceAtMost(codeLines.size)
+
+                codeView.text = codeLines
+                    .take(visibleLines)
+                    .joinToString("\n")
+
+                status.text = when {
+                    percent < 25 -> "INICIANDO SISTEMA..."
+                    percent < 50 -> "ANALIZANDO CONEXIÓN..."
+                    percent < 75 -> "VERIFICANDO SEGURIDAD..."
+                    else -> "FINALIZANDO DIAGNÓSTICO..."
+                }
+            }
+
+            override fun onFinish() {
+
+                overlayTimer = null
+
+                progress.progress = 100
+
+                codeView.text = codeLines.joinToString("\n")
+
+                status.text = "✓ RED ASEGURADA"
+                status.setTextColor(green)
+
+                closeButton.visibility = View.VISIBLE
+            }
+
+        }.start()
+    }
+
+    private fun closeAntiChuponeoOverlay() {
+        overlayTimer?.cancel()
+        overlayTimer = null
+
+        val frame = overlayFrame
+        val overlay = frame?.getChildAt(
+            frame.childCount - 1
+        )
+
+        if (overlay != null && overlay !== frame.getChildAt(0)) {
+            frame.removeView(overlay)
+        }
+
+        toast("Regresando al panel de seguridad.")
     }
 
     // ANTI-HACK WSP CON ESCUDO Y ANIMACIÓN
-
     private fun addWhatsAppProtection(root: LinearLayout) {
 
         val card = createCard(root, "🛡️ ANTI-HACK WSP", cyan)
@@ -611,6 +879,7 @@ class MainActivity : Activity() {
         cancelButton.visibility = View.VISIBLE
 
         countdown = object : CountDownTimer(5000, 1000) {
+
             override fun onTick(millisUntilFinished: Long) {
                 countdownText.text =
                     "LLAMANDO EN ${millisUntilFinished / 1000 + 1}..."
@@ -641,6 +910,7 @@ class MainActivity : Activity() {
                     )
                 }
             }
+
         }.start()
     }
 
@@ -668,6 +938,7 @@ class MainActivity : Activity() {
                 grantResults[0] == PackageManager.PERMISSION_GRANTED
             ) {
                 val number = prefs.getString("sos_phone", "") ?: ""
+
                 if (number.isNotBlank()) {
                     try {
                         startActivity(
@@ -690,6 +961,9 @@ class MainActivity : Activity() {
         countdown?.cancel()
         countdown = null
 
+        overlayTimer?.cancel()
+        overlayTimer = null
+
         whatsappScanTimer?.cancel()
         whatsappScanTimer = null
 
@@ -707,6 +981,9 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         countdown?.cancel()
         countdown = null
+
+        overlayTimer?.cancel()
+        overlayTimer = null
 
         whatsappScanTimer?.cancel()
         whatsappScanTimer = null
