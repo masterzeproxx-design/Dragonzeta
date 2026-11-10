@@ -1,13 +1,16 @@
 package com.dragonzeta.security
 
+import android.Manifest
 import android.app.Activity
-import android.os.Bundle
 import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -15,10 +18,40 @@ import android.widget.*
 import android.text.InputType
 
 class MainActivity : Activity() {
+
     private val bg = Color.rgb(4, 10, 23)
     private val cyan = Color.rgb(44, 216, 255)
-    private val amber = Color.rgb(255, 166, 65)
-    private val prefs by lazy { getSharedPreferences("dragon_zeta", MODE_PRIVATE) }
+    private val green = Color.rgb(30, 190, 90)
+    private val red = Color.rgb(220, 55, 55)
+
+    private val prefs by lazy {
+        getSharedPreferences("dragon_zeta", MODE_PRIVATE)
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var countdown = 5
+    private var pendingNumber = ""
+    private var counting = false
+
+    private lateinit var countdownText: TextView
+    private lateinit var cancelButton: Button
+
+    private val countdownTask = object : Runnable {
+        override fun run() {
+            if (!counting) return
+
+            countdown--
+            countdownText.text = "Llamada en $countdown segundos"
+
+            if (countdown <= 0) {
+                counting = false
+                countdownText.text = "Iniciando llamada..."
+                callEmergency()
+            } else {
+                handler.postDelayed(this, 1000)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,165 +60,341 @@ class MainActivity : Activity() {
         showHome()
     }
 
-    private fun panel(color: Int, radius: Float = 22f): GradientDrawable =
-        GradientDrawable().apply {
-            setColor(Color.rgb(8, 23, 45))
-            cornerRadius = radius
-            setStroke((2 * resources.displayMetrics.density).toInt(), color)
-        }
+    private fun dp(v: Int) =
+        (v * resources.displayMetrics.density).toInt()
 
-    private fun base(): LinearLayout = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        gravity = Gravity.CENTER_HORIZONTAL
-        setPadding(dp(20), dp(24), dp(20), dp(24))
-        background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
-            intArrayOf(Color.rgb(3, 8, 19), Color.rgb(6, 24, 48), Color.rgb(3, 8, 19)))
+    private fun panel(color: Int): GradientDrawable {
+        return GradientDrawable().apply {
+            setColor(Color.rgb(10, 25, 45))
+            cornerRadius = dp(18).toFloat()
+            setStroke(dp(2), color)
+        }
     }
 
-    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+    private fun label(
+        text: String,
+        size: Float,
+        color: Int,
+        bold: Boolean = false
+    ) = TextView(this).apply {
+        this.text = text
+        textSize = size
+        setTextColor(color)
+        gravity = Gravity.CENTER
+        if (bold) setTypeface(typeface, Typeface.BOLD)
+        setPadding(dp(5), dp(7), dp(5), dp(7))
+    }
 
-    private fun label(text: String, size: Float, color: Int, bold: Boolean = false): TextView =
-        TextView(this).apply {
+    private fun button(
+        text: String,
+        color: Int,
+        action: () -> Unit
+    ): Button {
+        return Button(this).apply {
             this.text = text
-            textSize = size
-            setTextColor(color)
-            gravity = Gravity.CENTER
-            if (bold) setTypeface(typeface, Typeface.BOLD)
-            setPadding(dp(4), dp(8), dp(4), dp(8))
-        }
-
-    private fun addButton(parent: LinearLayout, title: String, subtitle: String, color: Int, action: () -> Unit) {
-        val b = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            isAllCaps = false
             background = panel(color)
-            setPadding(dp(12), dp(18), dp(12), dp(18))
-            isClickable = true
-            isFocusable = true
             setOnClickListener { action() }
         }
-        b.addView(label(title, 23f, color, true))
-        b.addView(label(subtitle, 13f, Color.WHITE))
-        val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(112))
-        lp.setMargins(0, dp(8), 0, dp(8))
-        parent.addView(b, lp)
     }
+
+    private fun base(): LinearLayout {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(18), dp(20), dp(18), dp(20))
+            setBackgroundColor(bg)
+        }
+    }
+
+    private fun addOption(
+        root: LinearLayout,
+        title: String,
+        description: String,
+        key: String
+    ) {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = panel(cyan)
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+        }
+
+        card.addView(label(title, 20f, cyan, true))
+        card.addView(label(description, 13f, Color.LTGRAY))
+
+        var paid = prefs.getBoolean("${key}_paid", false)
+        var active = prefs.getBoolean("${key}_active", false)
+
+        if (!paid) active = false
+
+        val status = label("", 15f, Color.WHITE, true)
+
+        fun updateStatus() {
+            status.text = if (active && paid) {
+                "🟢 SEGURIDAD MÁXIMA"
+            } else if (!paid) {
+                "🔴 OPCIÓN NO PAGADA"
+            } else {
+                "🔴 DESACTIVADO"
+            }
+            status.setTextColor(
+                if (active && paid) green else red
+            )
+        }
+
+        updateStatus()
+        card.addView(status)
+
+        val paymentButton = button("", amberColor()) {
+            paid = !paid
+            if (!paid) active = false
+
+            prefs.edit()
+                .putBoolean("${key}_paid", paid)
+                .putBoolean("${key}_active", active)
+                .apply()
+
+            paymentButtonText()
+        }
+
+        fun refresh() {
+            paymentButton.text =
+                if (paid) "Marcar como NO pagada"
+                else "Marcar como PAGADA"
+
+            updateStatus()
+        }
+
+        fun paymentButtonText() {
+            refresh()
+        }
+
+        card.addView(paymentButton)
+
+        val activationButton = button("", green) {
+            if (!paid) {
+                toast("Esta opción todavía no está pagada.")
+            } else {
+                active = !active
+                prefs.edit()
+                    .putBoolean("${key}_active", active)
+                    .apply()
+                updateStatus()
+                activationButton.text =
+                    if (active) "DESACTIVAR" else "ACTIVAR"
+            }
+        }
+
+        activationButton.text =
+            if (active) "DESACTIVAR" else "ACTIVAR"
+
+        card.addView(activationButton)
+        refresh()
+
+        val lp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        lp.setMargins(0, dp(8), 0, dp(8))
+        root.addView(card, lp)
+    }
+
+    private fun amberColor() = Color.rgb(220, 145, 45)
 
     private fun showHome() {
         val root = base()
-        root.addView(label("DRAGÓN ZETA", 34f, Color.rgb(255, 205, 135), true))
-        root.addView(label("SEGURIDAD PERSONAL", 15f, Color.WHITE, true))
-        val hero = LinearLayout(this).apply {
+
+        root.addView(
+            label("🐉 DRAGÓN ZETA", 30f, cyan, true)
+        )
+        root.addView(
+            label("SISTEMA DE SEGURIDAD PERSONAL", 13f, Color.WHITE, true)
+        )
+
+        // SOS
+        val sosCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            background = panel(cyan, 28f)
-            setPadding(dp(16), dp(20), dp(16), dp(20))
+            background = panel(red)
+            setPadding(dp(12), dp(12), dp(12), dp(12))
         }
-        hero.addView(label("🛡️", 56f, cyan))
-        hero.addView(label("Tu centro de seguridad", 20f, Color.WHITE, true))
-        hero.addView(label("Accesos rápidos para pedir ayuda y revisar la privacidad de tu Android.", 14f, Color.LTGRAY))
-        val hp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        hp.setMargins(0, dp(24), 0, dp(20))
-        root.addView(hero, hp)
 
-        addButton(root, "🆘  SOS", "Llamar o enviar un mensaje de emergencia", cyan) { showSos() }
-        addButton(root, "🎙️  ANTI-CHUPONEO", "Revisar micrófono, cámara y privacidad", amber) { showAntiSpy() }
-        addButton(root, "📍  ANTI-RASTREO", "Revisar permisos y acceso a ubicación", amber) { showAntiTrack() }
-        root.addView(label("DRAGÓN ZETA  •  Versión 1.0", 11f, Color.GRAY))
-        setContentView(root)
-    }
+        sosCard.addView(
+            label("🆘 SOS – EMERGENCIA", 21f, red, true)
+        )
 
-    private fun header(root: LinearLayout, title: String, description: String) {
-        root.addView(label("DRAGÓN ZETA", 25f, Color.rgb(255, 205, 135), true))
-        root.addView(label(title, 21f, cyan, true))
-        root.addView(label(description, 14f, Color.LTGRAY))
-    }
+        sosCard.addView(
+            label("Número de emergencia", 14f, Color.WHITE)
+        )
 
-    private fun actionButton(root: LinearLayout, text: String, color: Int = cyan, action: () -> Unit) {
-        val b = Button(this).apply {
-            this.text = text
-            setTextColor(Color.WHITE)
-            background = panel(color, 16f)
-            isAllCaps = false
-            setOnClickListener { action() }
-        }
-        root.addView(b, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(58)).apply {
-            setMargins(0, dp(8), 0, dp(8))
-        })
-    }
-
-    private fun backButton(root: LinearLayout) = actionButton(root, "← Volver al inicio", Color.GRAY) { showHome() }
-
-    private fun showSos() {
-        val root = base()
-        header(root, "SOS — AYUDA DE EMERGENCIA",
-            "Configura un número de confianza. La app abrirá el marcador o tu aplicación de SMS; tú confirmas la llamada o el envío.")
-        root.addView(label("Número de emergencia / contacto de confianza", 14f, Color.WHITE, true))
         val phone = EditText(this).apply {
-            hint = "Ej.: +51 999 999 999"
+            hint = "+51 999 999 999"
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
             inputType = InputType.TYPE_CLASS_PHONE
             setSingleLine(true)
             setText(prefs.getString("sos_phone", ""))
-            background = panel(cyan, 12f)
-            setPadding(dp(12), dp(12), dp(12), dp(12))
+            background = panel(cyan)
+            setPadding(dp(12), dp(8), dp(12), dp(8))
         }
-        root.addView(phone, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(56)))
-        actionButton(root, "Guardar contacto") {
-            prefs.edit().putString("sos_phone", phone.text.toString().trim()).apply()
-            Toast.makeText(this, "Contacto guardado en este teléfono", Toast.LENGTH_SHORT).show()
-        }
-        actionButton(root, "LLAMAR — abrir marcador", cyan) {
+
+        sosCard.addView(
+            phone,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(55)
+            )
+        )
+
+        val save = button("GUARDAR NÚMERO", cyan) {
             val number = phone.text.toString().trim()
-            if (number.isBlank()) toast("Escribe primero un número.")
-            else startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(number)}")))
-        }
-        actionButton(root, "ENVIAR SOS — preparar SMS", amber) {
-            val number = phone.text.toString().trim()
-            if (number.isBlank()) toast("Escribe primero un número.")
-            else {
-                val sms = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(number)}"))
-                sms.putExtra("sms_body", "SOS: necesito ayuda. Por favor, comunícate conmigo.")
-                try { startActivity(sms) } catch (_: Exception) { toast("No hay una aplicación de SMS disponible.") }
+            if (number.isBlank()) {
+                toast("Escribe un número.")
+            } else {
+                prefs.edit().putString("sos_phone", number).apply()
+                toast("Número guardado.")
             }
         }
-        root.addView(label("Importante: no se realiza ninguna llamada ni se envía ningún SMS automáticamente.", 12f, Color.LTGRAY))
-        backButton(root)
-        setContentView(root)
-    }
+        sosCard.addView(save)
 
-    private fun showAntiSpy() {
-        val root = base()
-        header(root, "ANTI-CHUPONEO",
-            "Revisa qué aplicaciones tienen acceso al micrófono y la cámara. Android controla estos permisos desde Ajustes.")
-        root.addView(label("Consejos rápidos", 18f, Color.WHITE, true))
-        root.addView(label("• Retira el permiso de micrófono o cámara a apps que no lo necesiten.\n\n• Revisa el panel de privacidad para ver accesos recientes, si tu versión de Android lo ofrece.\n\n• Desinstala aplicaciones que no reconozcas y mantén Android actualizado.", 14f, Color.LTGRAY))
-        actionButton(root, "Abrir panel de privacidad", cyan) { openSettings(Settings.ACTION_PRIVACY_SETTINGS) }
-        actionButton(root, "Abrir ajustes de esta aplicación", amber) {
-            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+        countdownText = label(
+            "SOS preparado",
+            20f,
+            Color.WHITE,
+            true
+        )
+        sosCard.addView(countdownText)
+
+        val sosPaid = prefs.getBoolean("sos_paid", false)
+
+        val paySOS = button(
+            if (sosPaid) "Marcar SOS como NO pagado"
+            else "Marcar SOS como PAGADO",
+            amberColor()
+        ) {
+            val newValue = !prefs.getBoolean("sos_paid", false)
+            prefs.edit()
+                .putBoolean("sos_paid", newValue)
+                .apply()
+            showHome()
         }
-        backButton(root)
-        setContentView(root)
+        sosCard.addView(paySOS)
+
+        val startSOS = button("ACTIVAR SOS", red) {
+            val number = phone.text.toString().trim()
+            if (!prefs.getBoolean("sos_paid", false)) {
+                toast("SOS no está pagado.")
+            } else if (number.isBlank()) {
+                toast("Primero guarda un número.")
+            } else if (!counting) {
+                prefs.edit().putString("sos_phone", number).apply()
+                startCountdown(number)
+            }
+        }
+        sosCard.addView(startSOS)
+
+        cancelButton = button("CANCELAR", red) {
+            cancelCountdown()
+        }
+        cancelButton.visibility = View.GONE
+        sosCard.addView(cancelButton)
+
+        root.addView(sosCard)
+
+        addOption(
+            root,
+            "🎙️ ANTI-CHUPONEO",
+            "Control de activación de esta función",
+            "spy"
+        )
+
+        addOption(
+            root,
+            "📍 ANTI-RASTREO",
+            "Control de activación de esta función",
+            "track"
+        )
+
+        root.addView(
+            label("DRAGÓN ZETA • VERSIÓN 1.0", 11f, Color.GRAY)
+        )
+
+        val scroll = ScrollView(this)
+        scroll.addView(root)
+        setContentView(scroll)
     }
 
-    private fun showAntiTrack() {
-        val root = base()
-        header(root, "ANTI-RASTREO",
-            "Administra el acceso a tu ubicación y revisa qué aplicaciones pueden conocerla.")
-        root.addView(label("Recomendaciones", 18f, Color.WHITE, true))
-        root.addView(label("• Desactiva la ubicación cuando no la necesites.\n\n• Cambia el permiso de cada app a “Solo mientras se usa” o “No permitir”, según corresponda.\n\n• Revisa los permisos de ubicación precisa y el historial/servicios de ubicación de tu dispositivo.", 14f, Color.LTGRAY))
-        actionButton(root, "Abrir ajustes de ubicación", cyan) { openSettings(Settings.ACTION_LOCATION_SOURCE_SETTINGS) }
-        actionButton(root, "Abrir panel de privacidad", amber) { openSettings(Settings.ACTION_PRIVACY_SETTINGS) }
-        backButton(root)
-        setContentView(root)
+    private fun startCountdown(number: String) {
+        pendingNumber = number
+        countdown = 5
+        counting = true
+
+        countdownText.text = "Llamada en 5 segundos"
+        cancelButton.visibility = View.VISIBLE
+
+        handler.removeCallbacks(countdownTask)
+        handler.postDelayed(countdownTask, 1000)
     }
 
-    private fun openSettings(action: String) {
-        try { startActivity(Intent(action)) } catch (_: Exception) {
-            startActivity(Intent(Settings.ACTION_SETTINGS))
+    private fun cancelCountdown() {
+        counting = false
+        handler.removeCallbacks(countdownTask)
+        countdownText.text = "Llamada cancelada"
+        cancelButton.visibility = View.GONE
+        toast("Emergencia cancelada.")
+    }
+
+    private fun callEmergency() {
+        if (checkSelfPermission(Manifest.permission.CALL_PHONE)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            try {
+                val intent = Intent(
+                    Intent.ACTION_CALL,
+                    Uri.fromParts("tel", pendingNumber, null)
+                )
+                startActivity(intent)
+            } catch (e: Exception) {
+                toast("No se pudo iniciar la llamada.")
+            }
+        } else {
+            requestPermissions(
+                arrayOf(Manifest.permission.CALL_PHONE),
+                100
+            )
+        }
+        cancelButton.visibility = View.GONE
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(
+            requestCode, permissions, grantResults
+        )
+
+        if (requestCode == 100) {
+            if (grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            ) {
+                callEmergency()
+            } else {
+                toast("Permiso de llamada denegado.")
+                countdownText.text = "Llamada no realizada"
+            }
         }
     }
 
-    private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
+    private fun toast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+
+    override fun onDestroy() {
+        counting = false
+        handler.removeCallbacks(countdownTask)
+        super.onDestroy()
+    }
+}
 }
