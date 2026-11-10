@@ -255,8 +255,8 @@ class MainActivity : Activity() {
                         logout()
                     }
                 }
-                .addOnFailureListener {
-                    toast("No se pudo verificar el administrador.")
+                .addOnFailureListener { error ->
+                    toast("Error Firebase: ${error.message}")
                     showLogin()
                 }
 
@@ -315,8 +315,6 @@ class MainActivity : Activity() {
                 showLicenseInfo(root)
             }
         }
-
-        // SOS
 
         val sosCard = createCard(root, "🆘 SOS – EMERGENCIA", red)
 
@@ -396,9 +394,7 @@ class MainActivity : Activity() {
                 if (expiry != null) {
                     val date = android.text.format.DateFormat
                         .format("dd/MM/yyyy", expiry.toDate())
-                    root.addView(
-                        label("Vence el: $date", 14f, green, true)
-                    )
+                    root.addView(label("Vence el: $date", 14f, green, true))
                 }
             }
     }
@@ -409,9 +405,7 @@ class MainActivity : Activity() {
         card.addView(
             label("Una sola licencia para todo el sistema", 14f, Color.WHITE)
         )
-        card.addView(
-            label("YAPE: 991292264", 20f, cyan, true)
-        )
+        card.addView(label("YAPE: 991292264", 20f, cyan, true))
 
         card.addView(label("Mensual: S/ 55", 16f, Color.WHITE))
         addButton(card, makeButton("SOLICITAR PLAN MENSUAL", amber) {
@@ -465,7 +459,6 @@ class MainActivity : Activity() {
         key: String
     ) {
         val card = createCard(root, title, cyan)
-
         val status = label("", 16f, Color.WHITE, true)
         card.addView(status)
 
@@ -511,9 +504,7 @@ class MainActivity : Activity() {
             showHome()
         })
 
-        root.addView(
-            label("SOLICITUDES DE PAGO", 18f, green, true)
-        )
+        root.addView(label("SOLICITUDES DE PAGO", 18f, green, true))
 
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -526,9 +517,7 @@ class MainActivity : Activity() {
                 list.removeAllViews()
 
                 if (result.isEmpty) {
-                    list.addView(
-                        label("No hay solicitudes todavía.", 14f, Color.WHITE)
-                    )
+                    list.addView(label("No hay solicitudes todavía.", 14f, Color.WHITE))
                 }
 
                 for (doc in result.documents) {
@@ -537,11 +526,7 @@ class MainActivity : Activity() {
                     val plan = doc.getString("plan") ?: ""
                     val status = doc.getString("status") ?: ""
 
-                    val card = createCard(
-                        list,
-                        "SOLICITUD DE CLIENTE",
-                        cyan
-                    )
+                    val card = createCard(list, "SOLICITUD DE CLIENTE", cyan)
 
                     card.addView(label(email, 14f, Color.WHITE))
                     card.addView(label("UID: $uid", 10f, Color.LTGRAY))
@@ -556,7 +541,7 @@ class MainActivity : Activity() {
                 }
             }
             .addOnFailureListener {
-                toast("No se pudieron cargar las solicitudes.")
+                toast("No se pudieron cargar las solicitudes: ${it.message}")
             }
 
         showScreen(root)
@@ -593,20 +578,20 @@ class MainActivity : Activity() {
                 val oldExpiry = current.getTimestamp("expiresAt")?.toDate()
                 val now = Date()
 
-                val baseDate = if (
-                    oldExpiry != null && oldExpiry.after(now)
-                ) oldExpiry else now
+                val baseDate = if (oldExpiry != null && oldExpiry.after(now)) {
+                    oldExpiry
+                } else {
+                    now
+                }
 
                 val calendar = Calendar.getInstance()
                 calendar.time = baseDate
                 calendar.add(Calendar.MONTH, months)
 
-                val newExpiry = calendar.time
-
                 val license = hashMapOf(
                     "active" to true,
                     "plan" to plan,
-                    "expiresAt" to Timestamp(newExpiry),
+                    "expiresAt" to Timestamp(calendar.time),
                     "updatedAt" to FieldValue.serverTimestamp()
                 )
 
@@ -651,16 +636,12 @@ class MainActivity : Activity() {
         ) {
             startCountdown()
         } else {
-            requestPermissions(
-                arrayOf(Manifest.permission.CALL_PHONE),
-                100
-            )
+            requestPermissions(arrayOf(Manifest.permission.CALL_PHONE), 100)
         }
     }
 
     private fun startCountdown() {
         timer?.cancel()
-
         countdownText.text = "LLAMADA EN 5 SEGUNDOS"
         cancelButton.visibility = View.VISIBLE
 
@@ -716,11 +697,7 @@ class MainActivity : Activity() {
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
-        super.onRequestPermissionsResult(
-            requestCode,
-            permissions,
-            grantResults
-        )
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         if (requestCode == 100) {
             if (
