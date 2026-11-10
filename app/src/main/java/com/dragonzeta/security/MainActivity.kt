@@ -393,13 +393,14 @@ class MainActivity : Activity() {
         showScreen(root)
     }
 
-    // OPCIONES DEL MENÚ
+    // ANTI-CHUPONEO: ACTIVAR Y DESACTIVAR
     private fun addOption(
         root: LinearLayout,
         title: String,
         key: String
     ) {
         val active = prefs.getBoolean("${key}_active", false)
+
         val card = createCard(
             root,
             title,
@@ -411,7 +412,7 @@ class MainActivity : Activity() {
             card.addView(
                 label(
                     if (active) "✓ RED SEGURA • FUNCIÓN ACTIVADA"
-                    else "Análisis visual de seguridad de red",
+                    else "Sistema de análisis de seguridad de red",
                     12f,
                     if (active) green else Color.LTGRAY,
                     active
@@ -422,16 +423,18 @@ class MainActivity : Activity() {
                 card,
                 makeButton(
                     if (active) "ANTI-CHUPONEO ACTIVADO"
-                    else "INICIAR ESCANEO",
+                    else "ACTIVAR ANTI-CHUPONEO",
                     if (active) green else cyan
                 ) {
                     if (prefs.getBoolean("spy_active", false)) {
+
                         prefs.edit()
                             .putBoolean("spy_active", false)
                             .apply()
 
                         showHome()
-                        toast("ANTI-CHUPONEO desactivado.")
+                        toast("ANTI-CHUPONEO DESACTIVADO.")
+
                     } else {
                         showAntiChuponeoOverlay()
                     }
@@ -462,7 +465,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // CAPA TRANSPARENTE DE CIBERSEGURIDAD
+    // ESCANEO VISUAL ANTI-CHUPONEO
     private fun showAntiChuponeoOverlay() {
 
         val frame = overlayFrame ?: return
@@ -476,22 +479,12 @@ class MainActivity : Activity() {
             setBackgroundColor(Color.argb(190, 1, 7, 15))
         }
 
-        val title = label(
-            "🐉 DRAGÓN ZETA",
-            24f,
-            cyan,
-            true
+        overlay.addView(
+            label("🐉 DRAGÓN ZETA", 24f, cyan, true)
         )
 
-        overlay.addView(title)
-
         overlay.addView(
-            label(
-                "CYBER SECURITY TERMINAL",
-                13f,
-                green,
-                true
-            )
+            label("CYBER SECURITY TERMINAL", 13f, green, true)
         )
 
         overlay.addView(
@@ -563,7 +556,6 @@ class MainActivity : Activity() {
         }
 
         closeButton.visibility = View.GONE
-
         addButton(overlay, closeButton)
 
         overlay.addView(
@@ -605,7 +597,6 @@ class MainActivity : Activity() {
         )
 
         codeView.text = codeLines.take(3).joinToString("\n")
-
         status.text = "ANALIZANDO RED..."
 
         overlayTimer = object : CountDownTimer(7000, 500) {
@@ -636,12 +627,9 @@ class MainActivity : Activity() {
             override fun onFinish() {
 
                 overlayTimer = null
-
                 progress.progress = 100
-
                 codeView.text = codeLines.joinToString("\n")
 
-                // GUARDAR ANTI-CHUPONEO COMO ACTIVADO
                 prefs.edit()
                     .putBoolean("spy_active", true)
                     .apply()
@@ -668,13 +656,11 @@ class MainActivity : Activity() {
             frame.removeView(overlay)
         }
 
-        // ACTUALIZAR EL MENÚ PARA MOSTRAR EL BOTÓN VERDE
         showHome()
-
         toast("ANTI-CHUPONEO ACTIVADO.")
     }
 
-    // ANTI-HACK WSP CON ESCUDO Y ANIMACIÓN
+    // ANTI-HACK WSP
     private fun addWhatsAppProtection(root: LinearLayout) {
 
         val card = createCard(root, "🛡️ ANTI-HACK WSP", cyan)
@@ -842,7 +828,6 @@ class MainActivity : Activity() {
                                     .toInt()
 
                             progress.progress = percent
-
                             status.text = "REVISANDO CUENTA..."
                             detail.text =
                                 "Verificando protección... $percent%"
