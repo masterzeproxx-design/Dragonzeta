@@ -11,7 +11,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
-import android.os.CountDownTimer
+import android.os.Build
+import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -38,14 +39,15 @@ class MainActivity : Activity() {
     }
 
     private var loggedIn = false
-    private var countdown: CountDownTimer? = null
+    private var pendingSOSNumber = ""
+
     private lateinit var countdownText: TextView
     private lateinit var cancelButton: Button
 
-    private var whatsappScanTimer: CountDownTimer? = null
+    private var whatsappScanTimer: android.os.CountDownTimer? = null
     private var whatsappScanAnimator: ObjectAnimator? = null
 
-    private var overlayTimer: CountDownTimer? = null
+    private var overlayTimer: android.os.CountDownTimer? = null
     private var overlayFrame: FrameLayout? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,9 +78,7 @@ class MainActivity : Activity() {
             textSize = size
             setTextColor(color)
             gravity = Gravity.CENTER
-            if (bold) {
-                typeface = Typeface.DEFAULT_BOLD
-            }
+            if (bold) typeface = Typeface.DEFAULT_BOLD
             setPadding(dp(8), dp(7), dp(8), dp(7))
         }
     }
@@ -181,10 +181,8 @@ class MainActivity : Activity() {
             setPadding(dp(8), dp(12), dp(8), dp(12))
         }
 
-        val name = label("🐉 DRAGÓN ZETA", 23f, cyan, true)
-
         header.addView(
-            name,
+            label("🐉 DRAGÓN ZETA", 23f, cyan, true),
             LinearLayout.LayoutParams(0, dp(55), 1f)
         )
 
@@ -201,16 +199,10 @@ class MainActivity : Activity() {
     private fun showLogin() {
         val root = createRoot()
 
-        root.addView(
-            label("🐉 DRAGÓN ZETA", 27f, cyan, true)
-        )
-
-        root.addView(
-            label("SEGURIDAD PERSONAL", 13f, green, true)
-        )
+        root.addView(label("🐉 DRAGÓN ZETA", 27f, cyan, true))
+        root.addView(label("SEGURIDAD PERSONAL", 13f, green, true))
 
         val image = ImageView(this)
-
         val imageId = resources.getIdentifier(
             "dragon_zeta_login_header",
             "drawable",
@@ -220,7 +212,6 @@ class MainActivity : Activity() {
         if (imageId != 0) {
             image.setImageResource(imageId)
             image.scaleType = ImageView.ScaleType.FIT_CENTER
-
             root.addView(
                 image,
                 LinearLayout.LayoutParams(
@@ -256,10 +247,9 @@ class MainActivity : Activity() {
         card.addView(password)
 
         addButton(card, makeButton("INGRESAR", green) {
-            val user = username.text.toString().trim()
-            val pass = password.text.toString()
-
-            if (user == accessUser && pass == accessPassword) {
+            if (username.text.toString().trim() == accessUser &&
+                password.text.toString() == accessPassword
+            ) {
                 loggedIn = true
                 showHome()
             } else {
@@ -267,10 +257,7 @@ class MainActivity : Activity() {
             }
         })
 
-        root.addView(
-            label("SISTEMA DE PROTECCIÓN", 11f, Color.GRAY)
-        )
-
+        root.addView(label("SISTEMA DE PROTECCIÓN", 11f, Color.GRAY))
         showScreen(root)
     }
 
@@ -281,37 +268,24 @@ class MainActivity : Activity() {
         }
 
         val root = createRoot()
-
         addHeader(root)
 
-        root.addView(
-            label("PANEL DE CONTROL", 22f, Color.WHITE, true)
-        )
-
+        root.addView(label("PANEL DE CONTROL", 22f, Color.WHITE, true))
         root.addView(
             label("CENTRO DE SEGURIDAD PERSONAL", 11f, cyan, true)
         )
 
         val profile = createCard(root, "👤 PERFIL DE USUARIO", cyan)
-
-        profile.addView(
-            label("ZEPROXX", 23f, Color.WHITE, true)
-        )
-
-        profile.addView(
-            label("USUARIO AUTORIZADO", 13f, green, true)
-        )
-
+        profile.addView(label("ZEPROXX", 23f, Color.WHITE, true))
+        profile.addView(label("USUARIO AUTORIZADO", 13f, green, true))
         profile.addView(
             label("ESTADO: SISTEMA DISPONIBLE", 12f, Color.LTGRAY)
         )
 
         val statusCard = createCard(root, "🛡️ PROTECCIÓN", green)
-
         statusCard.addView(
             label("DRAGÓN ZETA ESTÁ LISTO", 16f, Color.WHITE, true)
         )
-
         statusCard.addView(
             label(
                 "Controla tus opciones desde este panel",
@@ -320,66 +294,10 @@ class MainActivity : Activity() {
             )
         )
 
-        val sosCard = createCard(root, "🆘 BOTÓN SOS", red)
-
-        sosCard.addView(
-            label("Número de emergencia", 14f, Color.WHITE)
-        )
-
-        val phone = EditText(this).apply {
-            hint = "+51 999 999 999"
-            setHintTextColor(Color.GRAY)
-            setTextColor(Color.WHITE)
-            inputType = InputType.TYPE_CLASS_PHONE
-            isSingleLine = true
-            setText(prefs.getString("sos_phone", ""))
-            background = panel(cyan)
-            setPadding(dp(12), dp(8), dp(12), dp(8))
-        }
-
-        sosCard.addView(
-            phone,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(54)
-            )
-        )
-
-        addButton(sosCard, makeButton("GUARDAR NÚMERO", cyan) {
-            val number = phone.text.toString().trim()
-
-            if (number.isBlank()) {
-                toast("Escribe un número.")
-            } else {
-                prefs.edit().putString("sos_phone", number).apply()
-                toast("Número guardado.")
-            }
-        })
-
-        countdownText = label("SOS PREPARADO", 20f, Color.WHITE, true)
-        sosCard.addView(countdownText)
-
-        addButton(sosCard, makeButton("ACTIVAR SOS", red) {
-            val number = phone.text.toString().trim()
-
-            if (number.isBlank()) {
-                toast("Primero escribe un número.")
-            } else {
-                prefs.edit().putString("sos_phone", number).apply()
-                prepareSOS(number)
-            }
-        })
-
-        cancelButton = makeButton("CANCELAR EMERGENCIA", red) {
-            cancelSOS()
-        }
-
-        cancelButton.visibility = View.GONE
-        addButton(sosCard, cancelButton)
+        addSOSCard(root)
 
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
         addOption(root, "📍 ANTI-RASTREO", "track")
-
         addWhatsAppProtection(root)
 
         addButton(root, makeButton("CERRAR SESIÓN", amber) {
@@ -393,7 +311,186 @@ class MainActivity : Activity() {
         showScreen(root)
     }
 
-    // ANTI-CHUPONEO: ACTIVAR Y DESACTIVAR
+    // SISTEMA SOS
+    private fun addSOSCard(root: LinearLayout) {
+        val active = prefs.getBoolean("sos_configured", false)
+        val number = prefs.getString("sos_phone", "") ?: ""
+
+        val card = createCard(
+            root,
+            "🆘 BOTÓN SOS",
+            if (active) green else red
+        )
+
+        if (active) {
+            card.addView(
+                label("✓ SOS ACTIVADO", 22f, green, true)
+            )
+
+            card.addView(
+                label(
+                    "Número de emergencia: $number",
+                    13f,
+                    Color.WHITE
+                )
+            )
+
+            card.addView(
+                label(
+                    "Dos pulsaciones de VOLUMEN ARRIBA activan la alerta.",
+                    12f,
+                    Color.LTGRAY
+                )
+            )
+
+            addButton(card, makeButton("PROBAR SOS AHORA", red) {
+                if (number.isNotBlank()) {
+                    SosEmergency.start(this, number)
+                } else {
+                    toast("Configura primero tu número SOS.")
+                }
+            })
+
+            addButton(card, makeButton("CAMBIAR NÚMERO", cyan) {
+                prefs.edit()
+                    .putBoolean("sos_configured", false)
+                    .apply()
+                showHome()
+            })
+
+            addButton(
+                card,
+                makeButton("CONFIGURAR ACTIVACIÓN POR VOLUMEN", green) {
+                    try {
+                        startActivity(
+                            Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                        )
+                    } catch (e: Exception) {
+                        toast("No se pudieron abrir los ajustes.")
+                    }
+                }
+            )
+
+        } else {
+            card.addView(
+                label("Configura tu número de emergencia", 14f, Color.WHITE)
+            )
+
+            val phone = EditText(this).apply {
+                hint = "+51 999 999 999"
+                setHintTextColor(Color.GRAY)
+                setTextColor(Color.WHITE)
+                inputType = InputType.TYPE_CLASS_PHONE
+                isSingleLine = true
+                setText(number)
+                background = panel(cyan)
+                setPadding(dp(12), dp(8), dp(12), dp(8))
+            }
+
+            card.addView(
+                phone,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    dp(54)
+                )
+            )
+
+            addButton(card, makeButton("GUARDAR Y ACTIVAR SOS", green) {
+                val newNumber = phone.text.toString().trim()
+
+                if (newNumber.isBlank()) {
+                    toast("Escribe un número.")
+                } else {
+                    activateSOS(newNumber)
+                }
+            })
+
+            card.addView(
+                label(
+                    "Después de activar, podrás usar dos pulsaciones " +
+                        "de volumen arriba.",
+                    11f,
+                    Color.LTGRAY
+                )
+            )
+        }
+    }
+
+    private fun activateSOS(number: String) {
+        pendingSOSNumber = number
+
+        prefs.edit()
+            .putString("sos_phone", number)
+            .apply()
+
+        if (checkSelfPermission(Manifest.permission.CALL_PHONE) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.CALL_PHONE),
+                100
+            )
+            return
+        }
+
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission("android.permission.POST_NOTIFICATIONS") !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf("android.permission.POST_NOTIFICATIONS"),
+                101
+            )
+            return
+        }
+
+        finishSOSActivation(number)
+    }
+
+    private fun finishSOSActivation(number: String) {
+        prefs.edit()
+            .putString("sos_phone", number)
+            .putBoolean("sos_configured", true)
+            .apply()
+
+        showHome()
+        toast("✓ SOS ACTIVADO CORRECTAMENTE")
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults
+        )
+
+        val granted = grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
+
+        when (requestCode) {
+            100 -> {
+                if (granted) {
+                    activateSOS(pendingSOSNumber)
+                } else {
+                    toast("Necesitas permitir las llamadas para usar SOS.")
+                }
+            }
+
+            101 -> {
+                if (granted) {
+                    finishSOSActivation(pendingSOSNumber)
+                } else {
+                    toast("Permite las notificaciones para poder cancelar el SOS.")
+                }
+            }
+        }
+    }
+
+    // ANTI-CHUPONEO
     private fun addOption(
         root: LinearLayout,
         title: String,
@@ -408,7 +505,6 @@ class MainActivity : Activity() {
         )
 
         if (key == "spy") {
-
             card.addView(
                 label(
                     if (active) "✓ RED SEGURA • FUNCIÓN ACTIVADA"
@@ -427,22 +523,17 @@ class MainActivity : Activity() {
                     if (active) green else cyan
                 ) {
                     if (prefs.getBoolean("spy_active", false)) {
-
                         prefs.edit()
                             .putBoolean("spy_active", false)
                             .apply()
-
                         showHome()
                         toast("ANTI-CHUPONEO DESACTIVADO.")
-
                     } else {
                         showAntiChuponeoOverlay()
                     }
                 }
             )
-
         } else {
-
             val switch = Switch(this).apply {
                 text = "Activar función"
                 textSize = 14f
@@ -465,11 +556,8 @@ class MainActivity : Activity() {
         }
     }
 
-    // ESCANEO VISUAL ANTI-CHUPONEO
     private fun showAntiChuponeoOverlay() {
-
         val frame = overlayFrame ?: return
-
         if (overlayTimer != null) return
 
         val overlay = LinearLayout(this).apply {
@@ -479,20 +567,12 @@ class MainActivity : Activity() {
             setBackgroundColor(Color.argb(190, 1, 7, 15))
         }
 
-        overlay.addView(
-            label("🐉 DRAGÓN ZETA", 24f, cyan, true)
-        )
-
+        overlay.addView(label("🐉 DRAGÓN ZETA", 24f, cyan, true))
         overlay.addView(
             label("CYBER SECURITY TERMINAL", 13f, green, true)
         )
-
         overlay.addView(
-            label(
-                "NETWORK ANALYSIS • SYSTEM SCAN",
-                10f,
-                Color.LTGRAY
-            )
+            label("NETWORK ANALYSIS • SYSTEM SCAN", 10f, Color.LTGRAY)
         )
 
         val codeView = TextView(this).apply {
@@ -520,13 +600,7 @@ class MainActivity : Activity() {
             }
         )
 
-        val status = label(
-            "INICIANDO ANÁLISIS...",
-            17f,
-            cyan,
-            true
-        )
-
+        val status = label("INICIANDO ANÁLISIS...", 17f, cyan, true)
         overlay.addView(status)
 
         val progress = ProgressBar(
@@ -559,11 +633,7 @@ class MainActivity : Activity() {
         addButton(overlay, closeButton)
 
         overlay.addView(
-            label(
-                "DIAGNÓSTICO VISUAL SIMULADO",
-                10f,
-                Color.LTGRAY
-            )
+            label("DIAGNÓSTICO VISUAL SIMULADO", 10f, Color.LTGRAY)
         )
 
         frame.addView(
@@ -597,14 +667,10 @@ class MainActivity : Activity() {
         )
 
         codeView.text = codeLines.take(3).joinToString("\n")
-        status.text = "ANALIZANDO RED..."
 
-        overlayTimer = object : CountDownTimer(7000, 500) {
-
+        overlayTimer = object : android.os.CountDownTimer(7000, 500) {
             override fun onTick(millisUntilFinished: Long) {
-
                 val elapsed = 7000L - millisUntilFinished
-
                 val percent = (elapsed * 100 / 7000).toInt()
                 progress.progress = percent
 
@@ -625,7 +691,6 @@ class MainActivity : Activity() {
             }
 
             override fun onFinish() {
-
                 overlayTimer = null
                 progress.progress = 100
                 codeView.text = codeLines.joinToString("\n")
@@ -636,10 +701,8 @@ class MainActivity : Activity() {
 
                 status.text = "✓ RED SEGURA\nFUNCIÓN ACTIVADA"
                 status.setTextColor(green)
-
                 closeButton.visibility = View.VISIBLE
             }
-
         }.start()
     }
 
@@ -648,9 +711,7 @@ class MainActivity : Activity() {
         overlayTimer = null
 
         val frame = overlayFrame
-        val overlay = frame?.getChildAt(
-            frame.childCount - 1
-        )
+        val overlay = frame?.getChildAt(frame.childCount - 1)
 
         if (overlay != null && overlay !== frame.getChildAt(0)) {
             frame.removeView(overlay)
@@ -662,7 +723,6 @@ class MainActivity : Activity() {
 
     // ANTI-HACK WSP
     private fun addWhatsAppProtection(root: LinearLayout) {
-
         val card = createCard(root, "🛡️ ANTI-HACK WSP", cyan)
 
         card.addView(
@@ -694,8 +754,7 @@ class MainActivity : Activity() {
         )
 
         val status = label(
-            if (active) "CUENTA PROTEGIDA"
-            else "SISTEMA EN ESPERA",
+            if (active) "CUENTA PROTEGIDA" else "SISTEMA EN ESPERA",
             19f,
             if (active) green else cyan,
             true
@@ -754,10 +813,7 @@ class MainActivity : Activity() {
         )
 
         button.setOnClickListener {
-
-            if (whatsappScanTimer != null) {
-                return@setOnClickListener
-            }
+            if (whatsappScanTimer != null) return@setOnClickListener
 
             val currentlyActive = prefs.getBoolean(
                 "whatsapp_protection_active",
@@ -765,7 +821,6 @@ class MainActivity : Activity() {
             )
 
             if (currentlyActive) {
-
                 prefs.edit()
                     .putBoolean("whatsapp_protection_active", false)
                     .apply()
@@ -776,7 +831,6 @@ class MainActivity : Activity() {
 
                 status.text = "PROTECCIÓN DESACTIVADA"
                 status.setTextColor(cyan)
-
                 detail.text = "Sistema en espera"
                 progress.progress = 0
                 progress.progressTintList =
@@ -789,15 +843,11 @@ class MainActivity : Activity() {
                 }
 
                 toast("ANTI-HACK WSP desactivado.")
-
             } else {
-
                 button.isEnabled = false
                 button.text = "REVISANDO CUENTA..."
-
                 status.text = "REVISANDO CUENTA..."
                 status.setTextColor(cyan)
-
                 detail.text = "Analizando estado de protección..."
                 shield.setTextColor(cyan)
 
@@ -805,24 +855,21 @@ class MainActivity : Activity() {
                 progress.progressTintList =
                     ColorStateList.valueOf(cyan)
 
-                whatsappScanAnimator =
-                    ObjectAnimator.ofFloat(
-                        shield,
-                        View.ROTATION,
-                        0f,
-                        360f
-                    ).apply {
-                        duration = 1200
-                        repeatCount = ValueAnimator.INFINITE
-                        interpolator = LinearInterpolator()
-                        start()
-                    }
+                whatsappScanAnimator = ObjectAnimator.ofFloat(
+                    shield,
+                    View.ROTATION,
+                    0f,
+                    360f
+                ).apply {
+                    duration = 1200
+                    repeatCount = ValueAnimator.INFINITE
+                    interpolator = LinearInterpolator()
+                    start()
+                }
 
                 whatsappScanTimer =
-                    object : CountDownTimer(5000, 100) {
-
+                    object : android.os.CountDownTimer(5000, 100) {
                         override fun onTick(millisUntilFinished: Long) {
-
                             val percent =
                                 ((5000L - millisUntilFinished) * 100 / 5000)
                                     .toInt()
@@ -834,22 +881,18 @@ class MainActivity : Activity() {
                         }
 
                         override fun onFinish() {
-
                             whatsappScanTimer = null
-
                             whatsappScanAnimator?.cancel()
                             whatsappScanAnimator = null
 
                             shield.rotation = 0f
                             shield.setTextColor(green)
-
                             progress.progress = 100
                             progress.progressTintList =
                                 ColorStateList.valueOf(green)
 
                             status.text = "CUENTA PROTEGIDA"
                             status.setTextColor(green)
-
                             detail.text =
                                 "PROTECCIÓN ACTIVADA CORRECTAMENTE"
 
@@ -869,103 +912,12 @@ class MainActivity : Activity() {
 
                             toast("¡CUENTA PROTEGIDA!")
                         }
-
                     }.start()
             }
         }
     }
 
-    private fun prepareSOS(number: String) {
-        if (countdown != null) {
-            toast("Ya hay una cuenta regresiva activa.")
-            return
-        }
-
-        cancelButton.visibility = View.VISIBLE
-
-        countdown = object : CountDownTimer(5000, 1000) {
-
-            override fun onTick(millisUntilFinished: Long) {
-                countdownText.text =
-                    "LLAMANDO EN ${millisUntilFinished / 1000 + 1}..."
-            }
-
-            override fun onFinish() {
-                countdown = null
-                cancelButton.visibility = View.GONE
-                countdownText.text = "CONTACTANDO..."
-
-                val intent = Intent(
-                    Intent.ACTION_CALL,
-                    Uri.parse("tel:$number")
-                )
-
-                if (checkSelfPermission(Manifest.permission.CALL_PHONE)
-                    == PackageManager.PERMISSION_GRANTED
-                ) {
-                    try {
-                        startActivity(intent)
-                    } catch (e: Exception) {
-                        toast("No se pudo realizar la llamada.")
-                    }
-                } else {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.CALL_PHONE),
-                        100
-                    )
-                }
-            }
-
-        }.start()
-    }
-
-    private fun cancelSOS() {
-        countdown?.cancel()
-        countdown = null
-        countdownText.text = "SOS CANCELADO"
-        cancelButton.visibility = View.GONE
-        toast("Emergencia cancelada.")
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(
-            requestCode,
-            permissions,
-            grantResults
-        )
-
-        if (requestCode == 100) {
-            if (grantResults.isNotEmpty() &&
-                grantResults[0] == PackageManager.PERMISSION_GRANTED
-            ) {
-                val number = prefs.getString("sos_phone", "") ?: ""
-
-                if (number.isNotBlank()) {
-                    try {
-                        startActivity(
-                            Intent(
-                                Intent.ACTION_CALL,
-                                Uri.parse("tel:$number")
-                            )
-                        )
-                    } catch (e: Exception) {
-                        toast("No se pudo realizar la llamada.")
-                    }
-                }
-            } else {
-                toast("Permiso de llamada denegado.")
-            }
-        }
-    }
-
     private fun logout() {
-        countdown?.cancel()
-        countdown = null
-
         overlayTimer?.cancel()
         overlayTimer = null
 
@@ -984,9 +936,6 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
-        countdown?.cancel()
-        countdown = null
-
         overlayTimer?.cancel()
         overlayTimer = null
 
