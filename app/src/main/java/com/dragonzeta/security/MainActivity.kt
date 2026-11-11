@@ -310,7 +310,10 @@ class MainActivity : Activity() {
 
         addSOSCard(root)
 
-        // NUEVO: SEGUIMIENTO GPS
+        // CONTACTO DE EMERGENCIA WHATSAPP
+        addWhatsAppEmergencyCard(root)
+
+        // SEGUIMIENTO GPS
         addTrackingCard(root)
 
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
@@ -433,6 +436,79 @@ class MainActivity : Activity() {
         }
     }
 
+    // CONTACTO DE EMERGENCIA WHATSAPP
+    private fun addWhatsAppEmergencyCard(root: LinearLayout) {
+
+        val number = prefs.getString(
+            "whatsapp_emergency_phone",
+            ""
+        ) ?: ""
+
+        val card = createCard(
+            root,
+            "📲 CONTACTO DE EMERGENCIA WHATSAPP",
+            green
+        )
+
+        card.addView(
+            label(
+                "Número que recibirá las alertas de emergencia",
+                13f,
+                Color.WHITE
+            )
+        )
+
+        val phone = EditText(this).apply {
+            hint = "+51 999 999 999"
+            setHintTextColor(Color.GRAY)
+            setTextColor(Color.WHITE)
+            inputType = InputType.TYPE_CLASS_PHONE
+            isSingleLine = true
+            setText(number)
+            background = panel(cyan)
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+        }
+
+        card.addView(
+            phone,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(54)
+            )
+        )
+
+        addButton(
+            card,
+            makeButton("GUARDAR CONTACTO DE EMERGENCIA", green) {
+
+                val newNumber = phone.text.toString().trim()
+
+                if (newNumber.isBlank()) {
+                    toast("Escribe el número de WhatsApp.")
+                } else {
+                    prefs.edit()
+                        .putString("whatsapp_emergency_phone", newNumber)
+                        .apply()
+
+                    toast("✓ CONTACTO DE EMERGENCIA GUARDADO")
+                    showHome()
+                }
+            }
+        )
+
+        card.addView(
+            label(
+                if (number.isNotBlank())
+                    "✓ CONTACTO CONFIGURADO"
+                else
+                    "AÚN NO HAY UN CONTACTO CONFIGURADO",
+                12f,
+                if (number.isNotBlank()) green else amber,
+                true
+            )
+        )
+    }
+
     private fun activateSOS(number: String) {
         pendingSOSNumber = number
 
@@ -524,7 +600,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // NUEVO SISTEMA DE SEGUIMIENTO GPS
+    // SISTEMA DE SEGUIMIENTO GPS
     private fun addTrackingCard(root: LinearLayout) {
         val active = prefs.getBoolean("tracking_active", false)
         val shareUrl = prefs.getString("tracking_share_url", "") ?: ""
