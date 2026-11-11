@@ -1,4 +1,3 @@
-
 package com.dragonzeta.security
 
 import android.Manifest
@@ -50,9 +49,24 @@ class MainActivity : Activity() {
     private var overlayTimer: android.os.CountDownTimer? = null
     private var overlayFrame: FrameLayout? = null
 
+    companion object {
+        private const val REQUEST_CALL_PERMISSION = 100
+        private const val REQUEST_NOTIFICATION_SOS = 101
+        private const val REQUEST_LOCATION_PERMISSION = 200
+        private const val REQUEST_TRACKING_NOTIFICATION = 201
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         showLogin()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (loggedIn) {
+            showHome()
+        }
     }
 
     private fun dp(value: Int): Int {
@@ -296,6 +310,9 @@ class MainActivity : Activity() {
 
         addSOSCard(root)
 
+        // NUEVO: SEGUIMIENTO GPS
+        addTrackingCard(root)
+
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
         addOption(root, "📍 ANTI-RASTREO", "track")
         addWhatsAppProtection(root)
@@ -428,18 +445,18 @@ class MainActivity : Activity() {
         ) {
             requestPermissions(
                 arrayOf(Manifest.permission.CALL_PHONE),
-                100
+                REQUEST_CALL_PERMISSION
             )
             return
         }
 
         if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission("android.permission.POST_NOTIFICATIONS") !=
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
         ) {
             requestPermissions(
-                arrayOf("android.permission.POST_NOTIFICATIONS"),
-                101
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_NOTIFICATION_SOS
             )
             return
         }
@@ -457,6 +474,7 @@ class MainActivity : Activity() {
         toast("✓ SOS ACTIVADO CORRECTAMENTE")
     }
 
+    // PERMISOS DEL SISTEMA SOS Y GPS
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -472,7 +490,7 @@ class MainActivity : Activity() {
             grantResults[0] == PackageManager.PERMISSION_GRANTED
 
         when (requestCode) {
-            100 -> {
+            REQUEST_CALL_PERMISSION -> {
                 if (granted) {
                     activateSOS(pendingSOSNumber)
                 } else {
@@ -480,13 +498,198 @@ class MainActivity : Activity() {
                 }
             }
 
-            101 -> {
+            REQUEST_NOTIFICATION_SOS -> {
                 if (granted) {
                     finishSOSActivation(pendingSOSNumber)
                 } else {
                     toast("Permite las notificaciones para poder cancelar el SOS.")
                 }
             }
+
+            REQUEST_LOCATION_PERMISSION -> {
+                if (granted) {
+                    requestTrackingNotificationPermission()
+                } else {
+                    toast("Debes permitir la ubicación precisa para usar el GPS.")
+                }
+            }
+
+            REQUEST_TRACKING_NOTIFICATION -> {
+                if (granted) {
+                    startGpsTracking()
+                } else {
+                    toast("Permite las notificaciones para iniciar el seguimiento.")
+                }
+            }
+        }
+    }
+
+    // NUEVO SISTEMA DE SEGUIMIENTO GPS
+    private fun addTrackingCard(root: LinearLayout) {
+        val active = prefs.getBoolean("tracking_active", false)
+        val shareUrl = prefs.getString("tracking_share_url", "") ?: ""
+
+        val card = createCard(
+            root,
+            "📍 SEGUIMIENTO GPS",
+            if (active) green else cyan
+        )
+
+        card.addView(
+            label(
+                if (active) "✓ SEGUIMIENTO EN CURSO"
+                else "UBICACIÓN EN ESPERA",
+                19f,
+                if (active) green else cyan,
+                true
+            )
+        )
+
+        card.addView(
+            label(
+                "Máximo 1 hora. Puedes detenerlo antes cuando quieras.",
+                12f,
+                Color.LTGRAY
+            )
+        )
+
+        card.addView(
+            label(
+                "Tres pulsaciones de VOLUMEN ABAJO inician el seguimiento " +
+                    "cuando los permisos ya están concedidos.",
+                11f,
+                Color.LTGRAY
+            )
+        )
+
+        addButton(
+            card,
+            makeButton(
+                if (active) "SEGUIMIENTO ACTIVADO"
+                else "ACTIVAR SEGUIMIENTO GPS",
+                green
+            ) {
+                requestTrackingPermissions()
+            }
+        )
+
+        addButton(
+            card,
+            makeButton("COMPARTIR UBICACIÓN POR WHATSAPP", cyan) {
+                shareTrackingLink()
+            }
+        )
+
+        addButton(
+            card,
+            makeButton("DETENER SEGUIMIENTO GPS", red) {
+                if (prefs.getBoolean("tracking_active", false)) {
+                    SosTrackingService.stopTracking(this)
+                    toast("Solicitud para detener el seguimiento enviada.")
+                } else {
+                    toast("No hay un seguimiento activo.")
+                }
+            }
+        )
+
+        if (shareUrl.isNotBlank()) {
+            card.addView(
+                label(
+                    "ENLACE PRIVADO GENERADO",
+                    11f,
+                    green,
+                    true
+                )
+            )
+        } else {
+            card.addView(
+                label(
+                    "El enlace aparecerá cuando el servidor reciba la primera ubicación.",
+                    10f,
+                    Color.GRAY
+                )
+            )
+        }
+    }
+
+    private fun requestTrackingPermissions() {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                REQUEST_LOCATION_PERMISSION
+            )
+            return
+        }
+
+        requestTrackingNotificationPermission()
+    }
+
+    private fun requestTrackingNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_TRACKING_NOTIFICATION
+            )
+            return
+        }
+
+        startGpsTracking()
+    }
+
+    private fun startGpsTracking() {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            toast("Falta conceder el permiso de ubicación precisa.")
+            return
+        }
+
+        try {
+            SosTrackingService.startTracking(this)
+            toast("Iniciando seguimiento GPS...")
+        } catch (e: Exception) {
+            toast("No se pudo iniciar el GPS. Abre la aplicación e inténtalo de nuevo.")
+        }
+    }
+
+    private fun shareTrackingLink() {
+        val shareUrl = prefs.getString(
+            "tracking_share_url",
+            ""
+        ) ?: ""
+
+        if (shareUrl.isBlank()) {
+            toast("Primero activa el GPS y espera a que se genere el enlace.")
+            return
+        }
+
+        try {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(
+                    Intent.EXTRA_SUBJECT,
+                    "Mi ubicación - DRAGÓN ZETA"
+                )
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    "Estoy compartiendo mi ubicación en tiempo real. " +
+                        "Abre este enlace para ver el mapa:\n$shareUrl"
+                )
+            }
+
+            startActivity(
+                Intent.createChooser(
+                    shareIntent,
+                    "Compartir ubicación con..."
+                )
+            )
+        } catch (e: Exception) {
+            toast("No se pudo abrir el menú para compartir.")
         }
     }
 
