@@ -45,17 +45,16 @@ class SosVolumeService : AccessibilityService() {
             return false
         }
 
-        if (event.action != KeyEvent.ACTION_DOWN) {
-            return true
-        }
-
-        if (event.repeatCount > 0) {
-            return true
+        // Solo contamos la pulsación inicial.
+        if (event.action != KeyEvent.ACTION_DOWN ||
+            event.repeatCount > 0
+        ) {
+            return false
         }
 
         val now = SystemClock.elapsedRealtime()
 
-        // VOLUMEN ARRIBA: DOS PULSACIONES = SOS
+        // DOS PULSACIONES DE VOLUMEN ARRIBA = SOS
         if (isVolumeUp) {
 
             downPressCount = 0
@@ -94,7 +93,7 @@ class SosVolumeService : AccessibilityService() {
             }
         }
 
-        // VOLUMEN ABAJO: TRES PULSACIONES = SEGUIMIENTO GPS
+        // TRES PULSACIONES DE VOLUMEN ABAJO = GPS
         if (isVolumeDown) {
 
             upPressCount = 0
@@ -114,13 +113,13 @@ class SosVolumeService : AccessibilityService() {
 
                 if (now - lastActivation > 1500L) {
                     lastActivation = now
-
                     SosTrackingService.startTracking(this)
                 }
             }
         }
 
-        return true
+        // IMPORTANTE: permite que Android cambie el volumen.
+        return false
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
