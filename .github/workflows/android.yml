@@ -1,3 +1,4 @@
+
 name: Construir Dragon Zeta APK
 
 on:
@@ -27,10 +28,18 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Revisar AndroidManifest
+        run: |
+          echo "=== CONTENIDO DEL MANIFEST ==="
+          cat -n app/src/main/AndroidManifest.xml
+          echo "=== VALIDAR XML ==="
+          python3 -c "import xml.etree.ElementTree as ET; ET.parse('app/src/main/AndroidManifest.xml'); print('MANIFEST XML CORRECTO')"
+
       - name: Construir APK
-        run: gradle :app:assembleDebug
+        run: gradle :app:assembleDebug --stacktrace --info
 
       - name: Guardar APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: DragonZeta-APK
