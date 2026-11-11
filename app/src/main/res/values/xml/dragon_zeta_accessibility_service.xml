@@ -5,6 +5,4 @@
     android:accessibilityEventTypes="typeAllMask"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:notificationTimeout="100"
-    android:canRequestFilterKeyEvents="true"
-    android:description="@string/app_name" />
-
+    android:canRequestFilterKeyEvents="true" />
