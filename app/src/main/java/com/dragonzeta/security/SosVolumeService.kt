@@ -1,16 +1,22 @@
-
 package com.dragonzeta.security
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
 
 class SosVolumeService : AccessibilityService() {
 
-    private var lastPressTime = 0L
-    private val doublePressInterval = 700L
+    private var upPressCount = 0
+    private var downPressCount = 0
+
+    private var lastUpPress = 0L
+    private var lastDownPress = 0L
+
+    private val pressInterval = 1000L
+    private var lastActivation = 0L
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -29,40 +35,89 @@ class SosVolumeService : AccessibilityService() {
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
 
-        if (event.keyCode != KeyEvent.KEYCODE_VOLUME_UP) {
+        val isVolumeUp =
+            event.keyCode == KeyEvent.KEYCODE_VOLUME_UP
+
+        val isVolumeDown =
+            event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+
+        if (!isVolumeUp && !isVolumeDown) {
             return false
         }
 
-        if (event.action != KeyEvent.ACTION_DOWN ||
-            event.repeatCount > 0
-        ) {
+        if (event.action != KeyEvent.ACTION_DOWN) {
             return true
         }
 
-        val now = System.currentTimeMillis()
+        if (event.repeatCount > 0) {
+            return true
+        }
 
-        if (now - lastPressTime <= doublePressInterval &&
-            lastPressTime != 0L
-        ) {
-            lastPressTime = 0L
+        val now = SystemClock.elapsedRealtime()
 
-            val number = getSharedPreferences(
-                "dragon_zeta",
-                MODE_PRIVATE
-            ).getString("sos_phone", "") ?: ""
+        // VOLUMEN ARRIBA: DOS PULSACIONES = SOS
+        if (isVolumeUp) {
 
-            if (number.isNotBlank()) {
-                SosEmergency.start(this, number)
-            } else {
-                Toast.makeText(
-                    this,
-                    "Primero configura tu número SOS",
-                    Toast.LENGTH_LONG
-                ).show()
+            downPressCount = 0
+            lastDownPress = 0L
+
+            if (now - lastUpPress > pressInterval) {
+                upPressCount = 0
             }
 
-        } else {
-            lastPressTime = now
+            upPressCount++
+            lastUpPress = now
+
+            if (upPressCount >= 2) {
+
+                upPressCount = 0
+                lastUpPress = 0L
+
+                if (now - lastActivation > 1500L) {
+                    lastActivation = now
+
+                    val number = getSharedPreferences(
+                        "dragon_zeta",
+                        MODE_PRIVATE
+                    ).getString("sos_phone", "") ?: ""
+
+                    if (number.isNotBlank()) {
+                        SosEmergency.start(this, number)
+                    } else {
+                        Toast.makeText(
+                            this,
+                            "Primero configura tu número SOS",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+        }
+
+        // VOLUMEN ABAJO: TRES PULSACIONES = SEGUIMIENTO GPS
+        if (isVolumeDown) {
+
+            upPressCount = 0
+            lastUpPress = 0L
+
+            if (now - lastDownPress > pressInterval) {
+                downPressCount = 0
+            }
+
+            downPressCount++
+            lastDownPress = now
+
+            if (downPressCount >= 3) {
+
+                downPressCount = 0
+                lastDownPress = 0L
+
+                if (now - lastActivation > 1500L) {
+                    lastActivation = now
+
+                    SosTrackingService.startTracking(this)
+                }
+            }
         }
 
         return true
@@ -76,4 +131,3 @@ class SosVolumeService : AccessibilityService() {
         // El servicio fue interrumpido.
     }
 }
-
