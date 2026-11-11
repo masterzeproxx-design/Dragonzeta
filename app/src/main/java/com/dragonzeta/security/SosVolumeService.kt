@@ -45,7 +45,7 @@ class SosVolumeService : AccessibilityService() {
             return false
         }
 
-        // Solo contamos la pulsación inicial.
+        // Permitir el comportamiento normal del volumen.
         if (event.action != KeyEvent.ACTION_DOWN ||
             event.repeatCount > 0
         ) {
@@ -93,7 +93,7 @@ class SosVolumeService : AccessibilityService() {
             }
         }
 
-        // TRES PULSACIONES DE VOLUMEN ABAJO = GPS
+        // DOS PULSACIONES DE VOLUMEN ABAJO = SEGUIMIENTO GPS
         if (isVolumeDown) {
 
             upPressCount = 0
@@ -106,19 +106,20 @@ class SosVolumeService : AccessibilityService() {
             downPressCount++
             lastDownPress = now
 
-            if (downPressCount >= 3) {
+            if (downPressCount >= 2) {
 
                 downPressCount = 0
                 lastDownPress = 0L
 
                 if (now - lastActivation > 1500L) {
                     lastActivation = now
+
                     SosTrackingService.startTracking(this)
                 }
             }
         }
 
-        // IMPORTANTE: permite que Android cambie el volumen.
+        // No bloquear las teclas físicas de volumen.
         return false
     }
 
