@@ -1,9 +1,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Conexión a internet -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Llamadas SOS -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+
+    <!-- Notificaciones -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Ubicación GPS -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Servicio en primer plano -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
     <application
         android:allowBackup="false"
@@ -23,6 +36,7 @@
 
         </activity>
 
+        <!-- Servicio de pulsaciones de volumen -->
         <service
             android:name=".SosVolumeService"
             android:label="SOS Dragón Zeta"
@@ -39,8 +53,20 @@
 
         </service>
 
+        <!-- Servicio de seguimiento GPS -->
+        <service
+            android:name=".SosTrackingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- Cancelar llamada SOS -->
         <receiver
             android:name=".SosCancelReceiver"
+            android:exported="false" />
+
+        <!-- Detener seguimiento GPS -->
+        <receiver
+            android:name=".SosTrackingStopReceiver"
             android:exported="false" />
 
     </application>
