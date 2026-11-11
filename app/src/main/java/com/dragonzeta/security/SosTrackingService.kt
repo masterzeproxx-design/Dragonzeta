@@ -28,25 +28,18 @@ import java.util.concurrent.Executors
 class SosTrackingService : Service() {
 
     companion object {
-        const val ACTION_START =
-            "com.dragonzeta.security.START_TRACKING"
-
-        const val ACTION_STOP =
-            "com.dragonzeta.security.STOP_TRACKING"
+        const val ACTION_START = "com.dragonzeta.security.START_TRACKING"
+        const val ACTION_STOP = "com.dragonzeta.security.STOP_TRACKING"
 
         private const val BASE_URL =
             "https://dragon-zeta-sos.lidiajimenez-199716.workers.dev"
 
         private const val CHANNEL_ID = "dragon_zeta_tracking"
         private const val NOTIFICATION_ID = 779
-
         private const val MAX_DURATION = 60 * 60 * 1000L
 
         fun startTracking(context: Context) {
-            val intent = Intent(
-                context,
-                SosTrackingService::class.java
-            ).apply {
+            val intent = Intent(context, SosTrackingService::class.java).apply {
                 action = ACTION_START
             }
 
@@ -56,20 +49,17 @@ class SosTrackingService : Service() {
                 } else {
                     context.startService(intent)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Toast.makeText(
                     context,
-                    "No se pudo iniciar el seguimiento. Abre la aplicación e inténtalo de nuevo.",
+                    "Abre DRAGÓN ZETA e inténtalo de nuevo.",
                     Toast.LENGTH_LONG
                 ).show()
             }
         }
 
         fun stopTracking(context: Context) {
-            val intent = Intent(
-                context,
-                SosTrackingService::class.java
-            ).apply {
+            val intent = Intent(context, SosTrackingService::class.java).apply {
                 action = ACTION_STOP
             }
 
@@ -87,7 +77,6 @@ class SosTrackingService : Service() {
     private val executor = Executors.newSingleThreadExecutor()
 
     private lateinit var locationManager: LocationManager
-
     private var locationListener: LocationListener? = null
     private var trackingStarted = false
 
@@ -100,6 +89,7 @@ class SosTrackingService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
         locationManager = getSystemService(
             Context.LOCATION_SERVICE
         ) as LocationManager
@@ -112,7 +102,6 @@ class SosTrackingService : Service() {
         flags: Int,
         startId: Int
     ): Int {
-
         when (intent?.action) {
             ACTION_STOP -> {
                 finishTracking("SEGUIMIENTO CANCELADO")
@@ -130,14 +119,12 @@ class SosTrackingService : Service() {
     }
 
     private fun beginTracking() {
-
         if (!hasLocationPermission()) {
             Toast.makeText(
                 this,
-                "Debes conceder permiso de ubicación desde DRAGÓN ZETA.",
+                "Concede permiso de ubicación desde DRAGÓN ZETA.",
                 Toast.LENGTH_LONG
             ).show()
-
             stopSelf()
             return
         }
@@ -155,17 +142,15 @@ class SosTrackingService : Service() {
                     buildNotification()
                 )
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             stopSelf()
             return
         }
 
         trackingStarted = true
 
-        getSharedPreferences(
-            "dragon_zeta",
-            MODE_PRIVATE
-        ).edit()
+        getSharedPreferences("dragon_zeta", MODE_PRIVATE)
+            .edit()
             .putBoolean("tracking_active", true)
             .putString("tracking_share_url", "")
             .apply()
@@ -173,7 +158,6 @@ class SosTrackingService : Service() {
         handler.postDelayed(stopTimer, MAX_DURATION)
 
         val listener = object : LocationListener {
-
             override fun onLocationChanged(location: Location) {
                 sendLocation(location)
             }
@@ -196,10 +180,7 @@ class SosTrackingService : Service() {
         locationListener = listener
 
         try {
-            if (locationManager.isProviderEnabled(
-                    LocationManager.GPS_PROVIDER
-                )
-            ) {
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 locationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
                     5000L,
@@ -209,10 +190,7 @@ class SosTrackingService : Service() {
                 )
             }
 
-            if (locationManager.isProviderEnabled(
-                    LocationManager.NETWORK_PROVIDER
-                )
-            ) {
+            if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 locationManager.requestLocationUpdates(
                     LocationManager.NETWORK_PROVIDER,
                     5000L,
@@ -221,8 +199,7 @@ class SosTrackingService : Service() {
                     Looper.getMainLooper()
                 )
             }
-
-        } catch (e: SecurityException) {
+        } catch (_: SecurityException) {
             finishTracking("PERMISO DE UBICACIÓN NO DISPONIBLE")
             return
         }
@@ -247,12 +224,10 @@ class SosTrackingService : Service() {
     }
 
     private fun sendLocation(location: Location) {
-
         val latitude = location.latitude
         val longitude = location.longitude
 
         executor.execute {
-
             try {
                 if (sessionId == null || writeToken == null) {
                     createServerSession()
@@ -268,11 +243,7 @@ class SosTrackingService : Service() {
                     put("longitude", longitude)
                 }
 
-                postRequest(
-                    "$BASE_URL/api/update",
-                    data
-                )
-
+                postRequest("$BASE_URL/api/update", data)
             } catch (_: Exception) {
                 // Se volverá a intentar con la siguiente ubicación.
             }
@@ -280,7 +251,6 @@ class SosTrackingService : Service() {
     }
 
     private fun createServerSession() {
-
         val response = postRequest(
             "$BASE_URL/api/start",
             JSONObject()
@@ -293,18 +263,14 @@ class SosTrackingService : Service() {
         sessionId = id
         writeToken = token
 
-        getSharedPreferences(
-            "dragon_zeta",
-            MODE_PRIVATE
-        ).edit()
+        getSharedPreferences("dragon_zeta", MODE_PRIVATE)
+            .edit()
             .putString("tracking_share_url", shareUrl)
             .putBoolean("tracking_active", true)
             .apply()
 
         handler.post {
-            updateNotification(
-                "Ubicación activa. Enlace listo para compartir."
-            )
+            updateNotification("Ubicación activa. Enlace listo para compartir.")
 
             Toast.makeText(
                 this,
@@ -318,9 +284,7 @@ class SosTrackingService : Service() {
         address: String,
         data: JSONObject
     ): JSONObject {
-
-        val connection = URL(address).openConnection()
-            as HttpURLConnection
+        val connection = URL(address).openConnection() as HttpURLConnection
 
         try {
             connection.requestMethod = "POST"
@@ -357,21 +321,18 @@ class SosTrackingService : Service() {
             } else {
                 JSONObject(responseText)
             }
-
         } finally {
             connection.disconnect()
         }
     }
 
     private fun finishTracking(message: String) {
-
         if (!trackingStarted) {
             stopSelf()
             return
         }
 
         trackingStarted = false
-
         handler.removeCallbacks(stopTimer)
 
         locationListener?.let {
@@ -380,13 +341,10 @@ class SosTrackingService : Service() {
             } catch (_: Exception) {
             }
         }
-
         locationListener = null
 
-        getSharedPreferences(
-            "dragon_zeta",
-            MODE_PRIVATE
-        ).edit()
+        getSharedPreferences("dragon_zeta", MODE_PRIVATE)
+            .edit()
             .putBoolean("tracking_active", false)
             .apply()
 
@@ -400,11 +358,7 @@ class SosTrackingService : Service() {
                         put("id", id)
                         put("writeToken", token)
                     }
-
-                    postRequest(
-                        "$BASE_URL/api/stop",
-                        data
-                    )
+                    postRequest("$BASE_URL/api/stop", data)
                 } catch (_: Exception) {
                 }
             }
@@ -427,12 +381,10 @@ class SosTrackingService : Service() {
         stopSelf()
     }
 
-    private fun buildNotification(): Notification {
-
-        val openIntent = Intent(
-            this,
-            MainActivity::class.java
-        )
+    private fun buildNotification(
+        message: String = "Seguimiento de ubicación activado."
+    ): Notification {
+        val openIntent = Intent(this, MainActivity::class.java)
 
         val openPendingIntent = PendingIntent.getActivity(
             this,
@@ -467,7 +419,7 @@ class SosTrackingService : Service() {
         return builder
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setContentTitle("DRAGÓN ZETA • GPS")
-            .setContentText("Seguimiento de ubicación activado.")
+            .setContentText(message)
             .setContentIntent(openPendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -486,19 +438,7 @@ class SosTrackingService : Service() {
 
         manager.notify(
             NOTIFICATION_ID,
-            buildNotification().let { notification ->
-                if (Build.VERSION.SDK_INT >= 26) {
-                    Notification.Builder(this, CHANNEL_ID)
-                        .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-                        .setContentTitle("DRAGÓN ZETA • GPS")
-                        .setContentText(message)
-                        .setOngoing(true)
-                        .setOnlyAlertOnce(true)
-                        .build()
-                } else {
-                    notification
-                }
-            }
+            buildNotification(message)
         )
     }
 
@@ -535,7 +475,6 @@ class SosTrackingService : Service() {
 }
 
 class SosTrackingStopReceiver : BroadcastReceiver() {
-
     override fun onReceive(
         context: Context,
         intent: Intent
