@@ -24,13 +24,11 @@ import android.animation.ValueAnimator
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 class MainActivity : Activity() {
 
     private val bg = Color.rgb(3, 8, 20)
-    private val panelColor = Color.rgb(8, 19, 38)
     private val cyan = Color.rgb(0, 220, 255)
     private val green = Color.rgb(0, 235, 145)
     private val red = Color.rgb(255, 55, 75)
@@ -49,7 +47,6 @@ class MainActivity : Activity() {
 
     private var loggedIn = false
     private var pendingSOSNumber = ""
-
     private var currentEmail = ""
     private var currentRole = "USUARIO"
     private var licenseExpiration = ""
@@ -483,7 +480,6 @@ class MainActivity : Activity() {
         )
     }
 
-    // LOGIN FIREBASE Y CONTRATACIÓN POR YAPE
     private fun showLogin() {
         loginInProgress = false
         loginButtonRef = null
@@ -588,8 +584,10 @@ class MainActivity : Activity() {
 
                     validateFirebaseAccess(email, uid)
                 }
-                .addOnFailureListener {
-                    rejectFirebaseAccess("Correo o contraseña incorrectos.")
+                .addOnFailureListener { error ->
+                    rejectFirebaseAccess(
+                        "ERROR DE AUTENTICACIÓN: ${error.message}"
+                    )
                 }
         }
 
@@ -601,15 +599,12 @@ class MainActivity : Activity() {
         yapeCard.addView(
             label("¿NO TIENES UNA LICENCIA?", 13f, Color.WHITE, true)
         )
-
         yapeCard.addView(
             label("CONTRATA TU ACCESO A DRAGÓN ZETA", 11f, Color.LTGRAY)
         )
-
         yapeCard.addView(
             label("PAGA POR YAPE AL SIGUIENTE NÚMERO", 11f, Color.LTGRAY)
         )
-
         yapeCard.addView(
             label("991 292 264", 26f, green, true)
         )
@@ -640,6 +635,7 @@ class MainActivity : Activity() {
         showScreen(root)
     }
 
+    // VALIDACIÓN FIREBASE CON MENSAJES DE ERROR DETALLADOS
     private fun validateFirebaseAccess(email: String, uid: String) {
 
         db.collection("usuarios")
@@ -649,13 +645,14 @@ class MainActivity : Activity() {
 
                 if (!userDoc.exists()) {
                     rejectFirebaseAccess(
-                        "Tu cuenta no tiene un perfil autorizado."
+                        "No existe el perfil para UID: $uid"
                     )
                     return@addOnSuccessListener
                 }
 
                 val active = userDoc.getBoolean("activo") == true
-                val role = userDoc.getString("rol") ?: "USUARIO"
+                val role = userDoc.getString("rol")?.trim() ?: "USUARIO"
+                val profileEmail = userDoc.getString("correo")?.trim() ?: ""
 
                 if (!active) {
                     rejectFirebaseAccess("Tu cuenta está desactivada.")
@@ -664,9 +661,16 @@ class MainActivity : Activity() {
 
                 if (email.equals(adminEmail, ignoreCase = true)) {
 
-                    if (role != "ADMIN") {
+                    if (!role.equals("ADMIN", ignoreCase = true)) {
                         rejectFirebaseAccess(
-                            "La cuenta principal no tiene el rol ADMIN."
+                            "El rol encontrado es: $role"
+                        )
+                        return@addOnSuccessListener
+                    }
+
+                    if (!profileEmail.equals(email, ignoreCase = true)) {
+                        rejectFirebaseAccess(
+                            "El correo del perfil no coincide: $profileEmail"
                         )
                         return@addOnSuccessListener
                     }
@@ -681,7 +685,6 @@ class MainActivity : Activity() {
 
                     showHome()
                     toast("BIENVENIDO ADMINISTRADOR")
-
                     return@addOnSuccessListener
                 }
 
@@ -692,7 +695,7 @@ class MainActivity : Activity() {
 
                         if (!licenseDoc.exists()) {
                             rejectFirebaseAccess(
-                                "No tienes una licencia registrada. Contacta al administrador."
+                                "No tienes una licencia registrada."
                             )
                             return@addOnSuccessListener
                         }
@@ -705,7 +708,7 @@ class MainActivity : Activity() {
 
                         if (!licenseActive || expiration == null) {
                             rejectFirebaseAccess(
-                                "Tu licencia no está activa o no tiene fecha de vencimiento."
+                                "Tu licencia no está activa o no tiene vencimiento."
                             )
                             return@addOnSuccessListener
                         }
@@ -741,15 +744,15 @@ class MainActivity : Activity() {
                             "LICENCIA ACTIVA: $licenseDaysRemaining días restantes."
                         )
                     }
-                    .addOnFailureListener {
+                    .addOnFailureListener { error ->
                         rejectFirebaseAccess(
-                            "No se pudo comprobar tu licencia. Verifica tu internet."
+                            "ERROR AL LEER LICENCIA: ${error.message}"
                         )
                     }
             }
-            .addOnFailureListener {
+            .addOnFailureListener { error ->
                 rejectFirebaseAccess(
-                    "No se pudo verificar tu perfil en Firebase."
+                    "ERROR FIRESTORE: ${error.message}"
                 )
             }
     }
@@ -780,9 +783,7 @@ class MainActivity : Activity() {
 
         val profile = createCard(root, "PERFIL DE USUARIO", cyan)
 
-        profile.addView(
-            label(currentEmail, 16f, Color.WHITE, true)
-        )
+        profile.addView(label(currentEmail, 16f, Color.WHITE, true))
 
         profile.addView(
             label(
@@ -799,10 +800,7 @@ class MainActivity : Activity() {
                 label("LICENCIA: ACCESO PERMANENTE", 12f, amber, true)
             )
         } else {
-            profile.addView(
-                label("VENCE: $licenseExpiration", 12f, Color.LTGRAY)
-            )
-
+            profile.addView(label("VENCE: $licenseExpiration", 12f, Color.LTGRAY))
             profile.addView(
                 label(
                     "DÍAS RESTANTES: $licenseDaysRemaining",
@@ -830,7 +828,6 @@ class MainActivity : Activity() {
         statusCard.addView(
             label("DRAGÓN ZETA ESTÁ LISTO", 15f, Color.WHITE, true)
         )
-
         statusCard.addView(
             label("Controla tus opciones desde este panel", 11f, Color.LTGRAY)
         )
@@ -937,7 +934,6 @@ class MainActivity : Activity() {
 
     private fun activateSOS(number: String) {
         pendingSOSNumber = number
-
         prefs.edit().putString("sos_phone", number).apply()
 
         if (checkSelfPermission(Manifest.permission.CALL_PHONE) !=
@@ -1414,7 +1410,6 @@ class MainActivity : Activity() {
         toast("ANTI-CHUPONEO ACTIVADO.")
     }
 
-    // ANTI-HACK WSP
     private fun addWhatsAppProtection(root: LinearLayout) {
         val card = createCard(root, "ANTI-HACK WSP", green)
 
@@ -1473,7 +1468,6 @@ class MainActivity : Activity() {
         addButton(card, button)
     }
 
-    // VENTANA FUTURISTA ANTI-HACK WSP
     private fun showWhatsAppProtectionOverlay() {
         val frame = overlayFrame ?: return
         if (whatsappScanTimer != null) return
@@ -1725,7 +1719,7 @@ class MainActivity : Activity() {
     }
 
     private fun toast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     override fun onDestroy() {
