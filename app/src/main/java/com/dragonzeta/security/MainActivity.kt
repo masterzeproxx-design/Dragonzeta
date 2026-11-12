@@ -4,6 +4,9 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.*
 import android.graphics.drawable.GradientDrawable
@@ -18,6 +21,11 @@ import android.widget.*
 import android.text.InputType
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : Activity() {
 
@@ -29,8 +37,11 @@ class MainActivity : Activity() {
     private val amber = Color.rgb(255, 180, 40)
     private val blueButton = Color.rgb(0, 105, 220)
 
-    private val accessUser = "ZEPROXX"
-    private val accessPassword = "16071997"
+    private val auth by lazy { FirebaseAuth.getInstance() }
+    private val db by lazy { FirebaseFirestore.getInstance() }
+
+    private val adminEmail = "masterzeproxx@gmail.com"
+    private val yapeNumber = "991292264"
 
     private val prefs by lazy {
         getSharedPreferences("dragon_zeta", MODE_PRIVATE)
@@ -38,6 +49,14 @@ class MainActivity : Activity() {
 
     private var loggedIn = false
     private var pendingSOSNumber = ""
+
+    private var currentEmail = ""
+    private var currentRole = "USUARIO"
+    private var licenseExpiration = ""
+    private var licenseDaysRemaining = 0
+
+    private var loginInProgress = false
+    private var loginButtonRef: Button? = null
 
     private var whatsappScanTimer: android.os.CountDownTimer? = null
     private var whatsappScanAnimator: ObjectAnimator? = null
@@ -464,8 +483,11 @@ class MainActivity : Activity() {
         )
     }
 
-    // LOGIN CON IMAGEN ORIGINAL
+    // LOGIN FIREBASE Y CONTRATACIÓN POR YAPE
     private fun showLogin() {
+        loginInProgress = false
+        loginButtonRef = null
+
         val root = createRoot()
 
         root.addView(label("SISTEMA DE ACCESO", 12f, green, true))
@@ -495,10 +517,12 @@ class MainActivity : Activity() {
         val card = createCard(root, "ACCESO DE USUARIO", cyan)
 
         val username = EditText(this).apply {
-            hint = "Usuario"
+            hint = "Correo electrónico"
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
             textSize = 15f
+            inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
             isSingleLine = true
             background = panel(cyan)
             setPadding(dp(14), dp(8), dp(14), dp(8))
@@ -536,19 +560,210 @@ class MainActivity : Activity() {
             }
         )
 
-        addButton(card, makeButton("INGRESAR AL SISTEMA", green) {
-            if (username.text.toString().trim() == accessUser &&
-                password.text.toString() == accessPassword
-            ) {
-                loggedIn = true
-                showHome()
-            } else {
-                toast("Usuario o contraseña incorrectos.")
+        lateinit var loginButton: Button
+
+        loginButton = makeButton("INGRESAR AL SISTEMA", green) {
+            if (loginInProgress) return@makeButton
+
+            val email = username.text.toString().trim()
+            val pass = password.text.toString()
+
+            if (email.isBlank() || pass.isBlank()) {
+                toast("Ingresa tu correo y contraseña.")
+                return@makeButton
             }
-        })
+
+            loginInProgress = true
+            loginButton.isEnabled = false
+            loginButton.text = "VERIFICANDO ACCESO..."
+
+            auth.signInWithEmailAndPassword(email, pass)
+                .addOnSuccessListener { result ->
+                    val uid = result.user?.uid
+
+                    if (uid == null) {
+                        rejectFirebaseAccess("No se pudo identificar tu cuenta.")
+                        return@addOnSuccessListener
+                    }
+
+                    validateFirebaseAccess(email, uid)
+                }
+                .addOnFailureListener {
+                    rejectFirebaseAccess("Correo o contraseña incorrectos.")
+                }
+        }
+
+        loginButtonRef = loginButton
+        addButton(card, loginButton)
+
+        val yapeCard = createCard(root, "CONTRATA TU LICENCIA", amber)
+
+        yapeCard.addView(
+            label("¿NO TIENES UNA LICENCIA?", 13f, Color.WHITE, true)
+        )
+
+        yapeCard.addView(
+            label("CONTRATA TU ACCESO A DRAGÓN ZETA", 11f, Color.LTGRAY)
+        )
+
+        yapeCard.addView(
+            label("PAGA POR YAPE AL SIGUIENTE NÚMERO", 11f, Color.LTGRAY)
+        )
+
+        yapeCard.addView(
+            label("991 292 264", 26f, green, true)
+        )
+
+        addButton(
+            yapeCard,
+            makeButton("COPIAR NÚMERO DE YAPE", blueButton) {
+                val clipboard =
+                    getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+                clipboard.setPrimaryClip(
+                    ClipData.newPlainText("Número de Yape", yapeNumber)
+                )
+
+                toast("Número de Yape copiado.")
+            }
+        )
+
+        yapeCard.addView(
+            label(
+                "Después de realizar el pago, contacta al administrador para activar tu licencia.",
+                10f,
+                Color.LTGRAY
+            )
+        )
 
         root.addView(label("SISTEMA DE PROTECCIÓN", 10f, Color.GRAY))
         showScreen(root)
+    }
+
+    private fun validateFirebaseAccess(email: String, uid: String) {
+
+        db.collection("usuarios")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { userDoc ->
+
+                if (!userDoc.exists()) {
+                    rejectFirebaseAccess(
+                        "Tu cuenta no tiene un perfil autorizado."
+                    )
+                    return@addOnSuccessListener
+                }
+
+                val active = userDoc.getBoolean("activo") == true
+                val role = userDoc.getString("rol") ?: "USUARIO"
+
+                if (!active) {
+                    rejectFirebaseAccess("Tu cuenta está desactivada.")
+                    return@addOnSuccessListener
+                }
+
+                if (email.equals(adminEmail, ignoreCase = true)) {
+
+                    if (role != "ADMIN") {
+                        rejectFirebaseAccess(
+                            "La cuenta principal no tiene el rol ADMIN."
+                        )
+                        return@addOnSuccessListener
+                    }
+
+                    currentEmail = email
+                    currentRole = "ADMIN"
+                    licenseExpiration = "ACCESO PERMANENTE"
+                    licenseDaysRemaining = -1
+
+                    loggedIn = true
+                    loginInProgress = false
+
+                    showHome()
+                    toast("BIENVENIDO ADMINISTRADOR")
+
+                    return@addOnSuccessListener
+                }
+
+                db.collection("licenses")
+                    .document(uid)
+                    .get()
+                    .addOnSuccessListener { licenseDoc ->
+
+                        if (!licenseDoc.exists()) {
+                            rejectFirebaseAccess(
+                                "No tienes una licencia registrada. Contacta al administrador."
+                            )
+                            return@addOnSuccessListener
+                        }
+
+                        val licenseActive =
+                            licenseDoc.getBoolean("activo") == true
+
+                        val expiration =
+                            licenseDoc.getTimestamp("expiresAt")
+
+                        if (!licenseActive || expiration == null) {
+                            rejectFirebaseAccess(
+                                "Tu licencia no está activa o no tiene fecha de vencimiento."
+                            )
+                            return@addOnSuccessListener
+                        }
+
+                        val expirationDate = expiration.toDate()
+                        val remaining =
+                            expirationDate.time - System.currentTimeMillis()
+
+                        if (remaining <= 0L) {
+                            rejectFirebaseAccess(
+                                "Tu licencia de 365 días ha vencido."
+                            )
+                            return@addOnSuccessListener
+                        }
+
+                        licenseDaysRemaining =
+                            ((remaining + 86_399_999L) / 86_400_000L).toInt()
+
+                        licenseExpiration = SimpleDateFormat(
+                            "dd/MM/yyyy",
+                            Locale.getDefault()
+                        ).format(expirationDate)
+
+                        currentEmail = email
+                        currentRole = role
+
+                        loggedIn = true
+                        loginInProgress = false
+
+                        showHome()
+
+                        toast(
+                            "LICENCIA ACTIVA: $licenseDaysRemaining días restantes."
+                        )
+                    }
+                    .addOnFailureListener {
+                        rejectFirebaseAccess(
+                            "No se pudo comprobar tu licencia. Verifica tu internet."
+                        )
+                    }
+            }
+            .addOnFailureListener {
+                rejectFirebaseAccess(
+                    "No se pudo verificar tu perfil en Firebase."
+                )
+            }
+    }
+
+    private fun rejectFirebaseAccess(message: String) {
+        loggedIn = false
+        loginInProgress = false
+
+        auth.signOut()
+
+        loginButtonRef?.isEnabled = true
+        loginButtonRef?.text = "INGRESAR AL SISTEMA"
+
+        toast(message)
     }
 
     private fun showHome() {
@@ -564,11 +779,46 @@ class MainActivity : Activity() {
         root.addView(label("CENTRO DE SEGURIDAD PERSONAL", 10f, cyan, true))
 
         val profile = createCard(root, "PERFIL DE USUARIO", cyan)
-        profile.addView(label("ZEPROXX", 22f, Color.WHITE, true))
-        profile.addView(label("USUARIO AUTORIZADO", 12f, green, true))
-        profile.addView(label("ESTADO: SISTEMA DISPONIBLE", 11f, Color.LTGRAY))
+
+        profile.addView(
+            label(currentEmail, 16f, Color.WHITE, true)
+        )
+
+        profile.addView(
+            label(
+                if (currentRole == "ADMIN") "ADMINISTRADOR PRINCIPAL"
+                else "USUARIO AUTORIZADO",
+                12f,
+                green,
+                true
+            )
+        )
+
+        if (currentRole == "ADMIN") {
+            profile.addView(
+                label("LICENCIA: ACCESO PERMANENTE", 12f, amber, true)
+            )
+        } else {
+            profile.addView(
+                label("VENCE: $licenseExpiration", 12f, Color.LTGRAY)
+            )
+
+            profile.addView(
+                label(
+                    "DÍAS RESTANTES: $licenseDaysRemaining",
+                    15f,
+                    if (licenseDaysRemaining <= 30) amber else green,
+                    true
+                )
+            )
+        }
+
+        profile.addView(
+            label("ESTADO: SISTEMA DISPONIBLE", 11f, Color.LTGRAY)
+        )
 
         val statusCard = createCard(root, "PROTECCIÓN DEL SISTEMA", green)
+
         statusCard.addView(
             CyberIconView("shield", green),
             LinearLayout.LayoutParams(
@@ -576,8 +826,14 @@ class MainActivity : Activity() {
                 dp(76)
             )
         )
-        statusCard.addView(label("DRAGÓN ZETA ESTÁ LISTO", 15f, Color.WHITE, true))
-        statusCard.addView(label("Controla tus opciones desde este panel", 11f, Color.LTGRAY))
+
+        statusCard.addView(
+            label("DRAGÓN ZETA ESTÁ LISTO", 15f, Color.WHITE, true)
+        )
+
+        statusCard.addView(
+            label("Controla tus opciones desde este panel", 11f, Color.LTGRAY)
+        )
 
         addSOSCard(root)
         addOption(root, "ANTI-CHUPONEO", "spy")
@@ -1458,6 +1714,13 @@ class MainActivity : Activity() {
         whatsappOverlayView = null
 
         loggedIn = false
+        loginInProgress = false
+        currentEmail = ""
+        currentRole = "USUARIO"
+        licenseExpiration = ""
+        licenseDaysRemaining = 0
+
+        auth.signOut()
         showLogin()
     }
 
