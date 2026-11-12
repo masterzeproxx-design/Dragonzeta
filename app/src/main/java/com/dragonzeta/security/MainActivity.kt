@@ -14,7 +14,7 @@ import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
+import android.view.WindowInsets
 import android.view.animation.LinearInterpolator
 import android.widget.*
 import android.text.InputType
@@ -23,13 +23,12 @@ import android.animation.ValueAnimator
 
 class MainActivity : Activity() {
 
-    private val bg = Color.rgb(2, 7, 23)
-    private val panelColor = Color.rgb(5, 17, 39)
-    private val cyan = Color.rgb(0, 205, 255)
-    private val green = Color.rgb(0, 240, 90)
-    private val red = Color.rgb(255, 35, 65)
-    private val amber = Color.rgb(255, 145, 0)
-    private val blue = Color.rgb(0, 95, 255)
+    private val bg = Color.rgb(4, 10, 25)
+    private val panelColor = Color.rgb(10, 22, 43)
+    private val cyan = Color.rgb(0, 220, 255)
+    private val green = Color.rgb(0, 230, 130)
+    private val red = Color.rgb(255, 55, 75)
+    private val amber = Color.rgb(255, 180, 40)
 
     private val accessUser = "ZEPROXX"
     private val accessPassword = "16071997"
@@ -49,7 +48,6 @@ class MainActivity : Activity() {
 
     private var overlayTimer: android.os.CountDownTimer? = null
     private var overlayFrame: FrameLayout? = null
-    private var antiOverlayView: View? = null
 
     companion object {
         private const val REQUEST_CALL_PERMISSION = 100
@@ -59,17 +57,25 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Mantener visibles la hora, batería, señal y navegación
+        // Mantener despejada la barra de hora, batería y notificaciones
         window.statusBarColor = bg
         window.navigationBarColor = bg
-        window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(true)
+        }
+
+        window.decorView.systemUiVisibility = 0
 
         showLogin()
     }
 
     override fun onResume() {
         super.onResume()
-        if (loggedIn) showHome()
+
+        if (loggedIn) {
+            showHome()
+        }
     }
 
     private fun dp(value: Int): Int {
@@ -82,11 +88,14 @@ class MainActivity : Activity() {
     ): GradientDrawable {
         return GradientDrawable().apply {
             setColor(
-                if (translucent) Color.argb(170, 3, 13, 34)
-                else panelColor
+                if (translucent) {
+                    Color.argb(218, 10, 22, 43)
+                } else {
+                    panelColor
+                }
             )
-            setStroke(dp(2), color)
-            cornerRadius = dp(11).toFloat()
+            setStroke(dp(1), color)
+            cornerRadius = dp(15).toFloat()
         }
     }
 
@@ -101,13 +110,8 @@ class MainActivity : Activity() {
             textSize = size
             setTextColor(color)
             gravity = Gravity.CENTER
-            if (bold) {
-                typeface = Typeface.create(
-                    "sans-serif-condensed",
-                    Typeface.BOLD_ITALIC
-                )
-            }
-            setPadding(dp(4), dp(3), dp(4), dp(3))
+            if (bold) typeface = Typeface.DEFAULT_BOLD
+            setPadding(dp(8), dp(7), dp(8), dp(7))
         }
     }
 
@@ -119,21 +123,12 @@ class MainActivity : Activity() {
         return Button(this).apply {
             this.text = text
             setTextColor(Color.WHITE)
-            textSize = 12f
-            typeface = Typeface.create(
-                "sans-serif-condensed",
-                Typeface.BOLD_ITALIC
-            )
-            isAllCaps = false
-            minHeight = 0
-            minimumHeight = 0
+            textSize = 14f
+            typeface = Typeface.DEFAULT_BOLD
             background = GradientDrawable().apply {
                 setColor(color)
-                setStroke(dp(1), Color.WHITE)
-                cornerRadius = dp(11).toFloat()
+                cornerRadius = dp(12).toFloat()
             }
-            elevation = dp(3).toFloat()
-            setPadding(dp(4), 0, dp(4), 0)
             setOnClickListener { action() }
         }
     }
@@ -143,63 +138,42 @@ class MainActivity : Activity() {
             child,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(43)
+                dp(52)
             ).apply {
-                setMargins(dp(3), dp(4), dp(3), dp(4))
+                setMargins(dp(5), dp(7), dp(5), dp(7))
             }
         )
     }
 
-    private fun addButtonRow(
-        parent: LinearLayout,
-        buttons: List<View>
-    ) {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-        }
-
-        buttons.forEach { button ->
-            row.addView(
-                button,
-                LinearLayout.LayoutParams(
-                    0,
-                    dp(43),
-                    1f
-                ).apply {
-                    setMargins(dp(3), dp(3), dp(3), dp(3))
-                }
-            )
-        }
-
-        parent.addView(
-            row,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        )
-    }
-
+    // CONTENEDOR PRINCIPAL AJUSTADO
     private fun createRoot(): LinearLayout {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            setPadding(dp(11), dp(4), dp(11), dp(12))
-            setBackgroundColor(Color.TRANSPARENT)
+
+            setPadding(
+                dp(18),
+                dp(12),
+                dp(18),
+                dp(25)
+            )
+
+            setBackgroundColor(bg)
         }
     }
 
-    // PANTALLA Y MARCA DE AGUA
+    // PANTALLA CON MARCA DE AGUA
     private fun showScreen(
         root: LinearLayout,
         watermark: Boolean = false
     ) {
-        val scroll = ScrollView(this).apply {
-            isFillViewport = false
-            clipToPadding = false
-            setBackgroundColor(Color.TRANSPARENT)
-            clipChildren = false
+        val scroll = ScrollView(this)
+
+        if (watermark) {
+            root.setBackgroundColor(Color.TRANSPARENT)
+            scroll.setBackgroundColor(Color.TRANSPARENT)
+        } else {
+            scroll.setBackgroundColor(bg)
         }
 
         scroll.addView(
@@ -210,16 +184,20 @@ class MainActivity : Activity() {
             )
         )
 
-        val frame = FrameLayout(this).apply {
-            setBackgroundColor(bg)
-        }
+        val frame = FrameLayout(this)
+        frame.setBackgroundColor(bg)
 
         if (watermark) {
             val logo = ImageView(this).apply {
                 setImageResource(R.drawable.dragon_zeta_logo)
                 scaleType = ImageView.ScaleType.FIT_CENTER
-                alpha = 0.25f
-                setPadding(dp(12), dp(80), dp(12), dp(80))
+                alpha = 0.16f
+                setPadding(
+                    dp(25),
+                    dp(45),
+                    dp(25),
+                    dp(45)
+                )
                 importantForAccessibility =
                     View.IMPORTANT_FOR_ACCESSIBILITY_NO
             }
@@ -245,7 +223,6 @@ class MainActivity : Activity() {
         setContentView(frame)
     }
 
-    // TARJETAS COMPACTAS
     private fun createCard(
         root: LinearLayout,
         title: String,
@@ -253,9 +230,8 @@ class MainActivity : Activity() {
     ): LinearLayout {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(8), dp(6), dp(8), dp(6))
+            setPadding(dp(12), dp(12), dp(12), dp(12))
             background = panel(color, true)
-            elevation = dp(2).toFloat()
         }
 
         root.addView(
@@ -264,72 +240,41 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(0, dp(4), 0, dp(4))
+                setMargins(0, dp(9), 0, dp(9))
             }
         )
 
-        val heading = label(title, 15f, color, true)
-        heading.gravity = Gravity.CENTER_VERTICAL
-        card.addView(heading)
-
+        card.addView(label(title, 16f, color, true))
         return card
     }
 
-    // ENCABEZADO
     private fun addHeader(root: LinearLayout) {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(2), dp(1), dp(2), dp(5))
-        }
-
-        val logo = ImageView(this).apply {
-            setImageResource(R.drawable.dragon_zeta_logo)
-            scaleType = ImageView.ScaleType.FIT_CENTER
+            gravity = Gravity.CENTER
+            setPadding(dp(8), dp(12), dp(8), dp(12))
         }
 
         header.addView(
-            logo,
-            LinearLayout.LayoutParams(dp(48), dp(43))
+            label("🐉 DRAGÓN ZETA", 23f, cyan, true),
+            LinearLayout.LayoutParams(0, dp(55), 1f)
         )
 
-        header.addView(
-            label("DRAGÓN ZETA", 19f, cyan, true),
-            LinearLayout.LayoutParams(0, dp(43), 1f)
-        )
-
-        val paid = label("PAGADO", 13f, Color.BLACK, true)
+        val paid = label("PAGADO", 12f, Color.BLACK, true)
         paid.background = GradientDrawable().apply {
             setColor(green)
-            setStroke(dp(1), Color.WHITE)
-            cornerRadius = dp(25).toFloat()
+            cornerRadius = dp(20).toFloat()
         }
 
-        header.addView(
-            paid,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                dp(34)
-            )
-        )
-
+        header.addView(paid)
         root.addView(header)
-
-        root.addView(
-            View(this).apply { setBackgroundColor(cyan) },
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(2)
-            )
-        )
     }
 
-    // INICIO DE SESIÓN
     private fun showLogin() {
         val root = createRoot()
 
-        root.addView(label("🐉 DRAGÓN ZETA", 25f, cyan, true))
-        root.addView(label("CENTRO DE SEGURIDAD PERSONAL", 12f, green, true))
+        root.addView(label("🐉 DRAGÓN ZETA", 27f, cyan, true))
+        root.addView(label("SEGURIDAD PERSONAL", 13f, green, true))
 
         val image = ImageView(this)
         val imageId = resources.getIdentifier(
@@ -345,7 +290,7 @@ class MainActivity : Activity() {
                 image,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    dp(155)
+                    dp(220)
                 )
             )
         }
@@ -354,26 +299,43 @@ class MainActivity : Activity() {
 
         val username = EditText(this).apply {
             hint = "Usuario"
-            setHintTextColor(Color.LTGRAY)
+            setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
             isSingleLine = true
             background = panel(cyan)
-            setPadding(dp(10), dp(5), dp(10), dp(5))
+            setPadding(dp(12), dp(8), dp(12), dp(8))
         }
 
         val password = EditText(this).apply {
             hint = "Contraseña"
-            setHintTextColor(Color.LTGRAY)
+            setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
             inputType = InputType.TYPE_CLASS_TEXT or
                 InputType.TYPE_TEXT_VARIATION_PASSWORD
             isSingleLine = true
             background = panel(cyan)
-            setPadding(dp(10), dp(5), dp(10), dp(5))
+            setPadding(dp(12), dp(8), dp(12), dp(8))
         }
 
-        card.addView(username)
-        card.addView(password)
+        card.addView(
+            username,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(58)
+            ).apply {
+                setMargins(0, dp(6), 0, dp(6))
+            }
+        )
+
+        card.addView(
+            password,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(58)
+            ).apply {
+                setMargins(0, dp(6), 0, dp(6))
+            }
+        )
 
         addButton(card, makeButton("INGRESAR", green) {
             if (username.text.toString().trim() == accessUser &&
@@ -386,11 +348,10 @@ class MainActivity : Activity() {
             }
         })
 
-        root.addView(label("SISTEMA DE PROTECCIÓN", 10f, Color.LTGRAY))
+        root.addView(label("SISTEMA DE PROTECCIÓN", 11f, Color.GRAY))
         showScreen(root)
     }
 
-    // PANEL PRINCIPAL
     private fun showHome() {
         if (!loggedIn) {
             showLogin()
@@ -400,68 +361,42 @@ class MainActivity : Activity() {
         val root = createRoot()
         addHeader(root)
 
-        root.addView(label("PANEL DE CONTROL", 23f, Color.WHITE, true))
+        root.addView(label("PANEL DE CONTROL", 22f, Color.WHITE, true))
         root.addView(
-            label("CENTRO DE SEGURIDAD PERSONAL", 12f, cyan, true)
+            label("CENTRO DE SEGURIDAD PERSONAL", 11f, cyan, true)
         )
 
-        // PERFIL
         val profile = createCard(root, "👤 PERFIL DE USUARIO", cyan)
-
-        val profileRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-
-        val avatar = label("●", 39f, cyan, true)
-        profileRow.addView(
-            avatar,
-            LinearLayout.LayoutParams(dp(65), dp(60))
-        )
-
-        val profileInfo = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-
-        profileInfo.addView(label("ZEPROXX", 21f, Color.WHITE, true))
-        profileInfo.addView(
-            label("USUARIO AUTORIZADO", 13f, green, true)
-        )
-
-        profileRow.addView(
-            profileInfo,
-            LinearLayout.LayoutParams(0, dp(60), 1f)
-        )
-
-        profile.addView(profileRow)
+        profile.addView(label("ZEPROXX", 23f, Color.WHITE, true))
+        profile.addView(label("USUARIO AUTORIZADO", 13f, green, true))
         profile.addView(
-            label("ESTADO: SISTEMA DISPONIBLE", 13f, Color.WHITE, true)
+            label("ESTADO: SISTEMA DISPONIBLE", 12f, Color.LTGRAY)
         )
 
-        // PROTECCIÓN
-        val protection = createCard(root, "🛡️ PROTECCIÓN", green)
-        protection.addView(
-            label("DRAGÓN ZETA ESTÁ LISTO", 18f, green, true)
+        val statusCard = createCard(root, "🛡️ PROTECCIÓN", green)
+        statusCard.addView(
+            label("DRAGÓN ZETA ESTÁ LISTO", 16f, Color.WHITE, true)
         )
-        protection.addView(
+        statusCard.addView(
             label(
                 "Controla tus opciones desde este panel",
                 12f,
-                Color.WHITE
+                Color.LTGRAY
             )
         )
 
         addSOSCard(root)
+
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
-        addOption(root, "🌐 ANTI-RASTREO", "track")
+        addOption(root, "📍 ANTI-RASTREO", "track")
         addWhatsAppProtection(root)
 
-        addButton(root, makeButton("➜  CERRAR SESIÓN", amber) {
+        addButton(root, makeButton("CERRAR SESIÓN", amber) {
             logout()
         })
 
         root.addView(
-            label("🐉 DRAGÓN ZETA • VERSIÓN 1.0", 11f, cyan, true)
+            label("🐉 DRAGÓN ZETA • VERSIÓN 1.0", 11f, Color.GRAY)
         )
 
         showScreen(root, watermark = true)
@@ -472,83 +407,103 @@ class MainActivity : Activity() {
         val active = prefs.getBoolean("sos_configured", false)
         val number = prefs.getString("sos_phone", "") ?: ""
 
-        val card = createCard(root, "🆘 BOTÓN SOS", red)
+        val card = createCard(
+            root,
+            "🆘 BOTÓN SOS",
+            if (active) green else red
+        )
 
         if (active) {
-            card.addView(label("✓ SOS ACTIVADO", 17f, green, true))
             card.addView(
-                label("Número de emergencia: $number", 12f, Color.WHITE)
+                label("✓ SOS ACTIVADO", 22f, green, true)
             )
+
+            card.addView(
+                label(
+                    "Número de emergencia: $number",
+                    13f,
+                    Color.WHITE
+                )
+            )
+
             card.addView(
                 label(
                     "Dos pulsaciones de VOLUMEN ARRIBA activan la alerta.",
-                    11f,
+                    12f,
                     Color.LTGRAY
                 )
             )
 
-            addButtonRow(
-                card,
-                listOf(
-                    makeButton("PROBAR SOS", red) {
-                        if (number.isNotBlank()) {
-                            SosEmergency.start(this, number)
-                        } else {
-                            toast("Configura primero tu número SOS.")
-                        }
-                    },
-                    makeButton("CAMBIAR NÚMERO", blue) {
-                        prefs.edit()
-                            .putBoolean("sos_configured", false)
-                            .apply()
-                        showHome()
-                    }
-                )
-            )
-
-            addButton(card, makeButton("CONFIGURAR ACTIVACIÓN POR VOLUMEN", green) {
-                try {
-                    startActivity(
-                        Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                    )
-                } catch (e: Exception) {
-                    toast("No se pudieron abrir los ajustes.")
+            addButton(card, makeButton("PROBAR SOS AHORA", red) {
+                if (number.isNotBlank()) {
+                    SosEmergency.start(this, number)
+                } else {
+                    toast("Configura primero tu número SOS.")
                 }
             })
 
+            addButton(card, makeButton("CAMBIAR NÚMERO", cyan) {
+                prefs.edit()
+                    .putBoolean("sos_configured", false)
+                    .apply()
+                showHome()
+            })
+
+            addButton(
+                card,
+                makeButton("CONFIGURAR ACTIVACIÓN POR VOLUMEN", green) {
+                    try {
+                        startActivity(
+                            Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                        )
+                    } catch (e: Exception) {
+                        toast("No se pudieron abrir los ajustes.")
+                    }
+                }
+            )
+
         } else {
             card.addView(
-                label("Configura tu número de emergencia", 12f, Color.WHITE)
+                label("Configura tu número de emergencia", 14f, Color.WHITE)
             )
 
             val phone = EditText(this).apply {
                 hint = "+51 999 999 999"
-                setHintTextColor(Color.LTGRAY)
+                setHintTextColor(Color.GRAY)
                 setTextColor(Color.WHITE)
-                textSize = 17f
                 inputType = InputType.TYPE_CLASS_PHONE
                 isSingleLine = true
                 setText(number)
                 background = panel(cyan)
-                setPadding(dp(10), dp(5), dp(10), dp(5))
+                setPadding(dp(12), dp(8), dp(12), dp(8))
             }
 
             card.addView(
                 phone,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    dp(44)
+                    dp(54)
                 )
             )
 
             addButton(card, makeButton("GUARDAR Y ACTIVAR SOS", green) {
                 val newNumber = phone.text.toString().trim()
+
                 if (newNumber.isBlank()) {
                     toast("Escribe un número.")
                 } else {
                     activateSOS(newNumber)
                 }
             })
+
+            card.addView(
+                label(
+                    "Después de activar, podrás usar dos pulsaciones " +
+                        "de volumen arriba.",
+                    11f,
+                    Color.LTGRAY
+                )
+            )
         }
     }
 
@@ -633,92 +588,81 @@ class MainActivity : Activity() {
         key: String
     ) {
         val active = prefs.getBoolean("${key}_active", false)
-        val color = if (active) green else cyan
 
-        val card = createCard(root, title, color)
-
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-
-        val info = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
+        val card = createCard(
+            root,
+            title,
+            if (active) green else cyan
+        )
 
         if (key == "spy") {
-            info.addView(
+            card.addView(
                 label(
                     if (active) "✓ RED SEGURA • FUNCIÓN ACTIVADA"
-                    else "Sistema de análisis visual de red",
+                    else "Sistema de análisis de seguridad de red",
                     12f,
-                    if (active) green else Color.WHITE,
-                    true
+                    if (active) green else Color.LTGRAY,
+                    active
                 )
             )
 
-            val action = makeButton(
-                if (active) "DESACTIVAR" else "ACTIVAR",
-                if (active) green else blue
-            ) {
-                if (prefs.getBoolean("spy_active", false)) {
-                    prefs.edit().putBoolean("spy_active", false).apply()
-                    showHome()
-                    toast("ANTI-CHUPONEO DESACTIVADO.")
-                } else {
-                    showAntiChuponeoOverlay()
+            addButton(
+                card,
+                makeButton(
+                    if (active) "ANTI-CHUPONEO ACTIVADO"
+                    else "ACTIVAR ANTI-CHUPONEO",
+                    if (active) green else cyan
+                ) {
+                    if (prefs.getBoolean("spy_active", false)) {
+                        prefs.edit()
+                            .putBoolean("spy_active", false)
+                            .apply()
+                        showHome()
+                        toast("ANTI-CHUPONEO DESACTIVADO.")
+                    } else {
+                        showAntiChuponeoOverlay()
+                    }
                 }
-            }
-
-            row.addView(info, LinearLayout.LayoutParams(0, dp(47), 1f))
-            row.addView(
-                action,
-                LinearLayout.LayoutParams(dp(112), dp(40))
             )
-
-        } else {
-            info.addView(
+        } else if (key == "track") {
+            card.addView(
                 label(
                     if (active) "✓ VPN ACTUALIZADA"
-                    else "Cambio visual de servidor VPN",
+                    else "Actualiza la presentación de tu conexión",
                     12f,
-                    if (active) green else Color.WHITE,
-                    true
+                    if (active) green else Color.LTGRAY,
+                    active
                 )
             )
 
-            val action = makeButton(
-                if (active) "DESCONECTAR" else "CONECTAR VPN",
-                blue
-            ) {
-                if (vpnSimulationTimer != null) return@makeButton
+            addButton(
+                card,
+                makeButton(
+                    if (active) "DESACTIVAR VPN ACTUALIZADA"
+                    else "ACTUALIZAR VPN",
+                    if (active) green else cyan
+                ) {
+                    if (vpnSimulationTimer != null) return@makeButton
 
-                if (prefs.getBoolean("track_active", false)) {
-                    prefs.edit().putBoolean("track_active", false).apply()
-                    showHome()
-                    toast("VPN desconectada.")
-                } else {
-                    showVpnSimulationOverlay()
+                    if (prefs.getBoolean("track_active", false)) {
+                        prefs.edit().putBoolean("track_active", false).apply()
+                        showHome()
+                        toast("VPN desconectada.")
+                    } else {
+                        showVpnSimulationOverlay()
+                    }
                 }
-            }
-
-            row.addView(info, LinearLayout.LayoutParams(0, dp(47), 1f))
-            row.addView(
-                action,
-                LinearLayout.LayoutParams(dp(120), dp(40))
             )
         }
-
-        card.addView(row)
     }
 
-    // VENTANA DE SIMULACIÓN VPN
+    // VENTANA DE ACTUALIZACIÓN VPN
     private fun showVpnSimulationOverlay() {
         val frame = overlayFrame ?: return
         if (vpnSimulationTimer != null) return
 
         val overlay = FrameLayout(this).apply {
-            setBackgroundColor(Color.argb(215, 0, 4, 16))
+            setBackgroundColor(Color.argb(178, 0, 5, 16))
             isClickable = true
             isFocusable = true
         }
@@ -726,19 +670,25 @@ class MainActivity : Activity() {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-            background = panel(cyan)
-            elevation = dp(15).toFloat()
+            setPadding(dp(20), dp(22), dp(20), dp(20))
+            background = GradientDrawable().apply {
+                setColor(Color.argb(248, 8, 20, 39))
+                setStroke(dp(1), cyan)
+                cornerRadius = dp(22).toFloat()
+            }
+            elevation = dp(18).toFloat()
         }
 
         card.addView(label("🐉 DRAGÓN ZETA", 22f, cyan, true))
-        card.addView(label("SIMULACIÓN DE CONEXIÓN VPN", 13f, green, true))
-        card.addView(label("◈", 48f, cyan, true))
+        card.addView(label("VPN ACTUALIZADA", 14f, green, true))
 
-        val status = label("INICIANDO CONEXIÓN...", 14f, Color.WHITE, true)
+        val lock = label("◈", 54f, cyan, true)
+        card.addView(lock)
+
+        val status = label("INICIANDO CONEXIÓN...", 16f, Color.WHITE, true)
         card.addView(status)
 
-        val server = label("Servidor: seleccionando ubicación", 11f, Color.LTGRAY)
+        val server = label("Servidor: seleccionando ubicación", 12f, Color.LTGRAY)
         card.addView(server)
 
         val progress = ProgressBar(
@@ -756,30 +706,59 @@ class MainActivity : Activity() {
             progress,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(9)
-            ).apply {
-                setMargins(dp(4), dp(12), dp(4), dp(10))
-            }
+                dp(10)
+            ).apply { setMargins(dp(4), dp(15), dp(4), dp(12)) }
         )
 
-        val log = label("Preparando simulación...", 10f, green)
+        val ipPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+            background = GradientDrawable().apply {
+                setColor(Color.argb(190, 2, 12, 27))
+                setStroke(dp(1), Color.argb(150, 0, 220, 255))
+                cornerRadius = dp(12).toFloat()
+            }
+        }
+
+        val oldIp = label("IP ANTERIOR: —", 12f, Color.LTGRAY)
+        val newIp = label("IP ACTUALIZADA: conectando...", 12f, cyan, true)
+
+        ipPanel.addView(oldIp)
+        ipPanel.addView(newIp)
+        card.addView(ipPanel)
+
+        val log = TextView(this).apply {
+            text = "Preparando túnel cifrado..."
+            textSize = 10f
+            typeface = Typeface.MONOSPACE
+            setTextColor(green)
+            gravity = Gravity.START
+            setPadding(dp(8), dp(12), dp(8), dp(8))
+        }
+
         card.addView(log)
 
         val close = makeButton("CANCELAR", red) {
             closeVpnSimulationOverlay(false)
         }
-        addButton(card, close)
 
-        overlay.addView(
-            card,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-            ).apply {
-                setMargins(dp(20), dp(15), dp(20), dp(15))
-            }
+        card.addView(
+            close,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(48)
+            ).apply { setMargins(0, dp(10), 0, 0) }
         )
+
+        val cardParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.CENTER
+        ).apply {
+            setMargins(dp(22), dp(18), dp(22), dp(18))
+        }
+
+        overlay.addView(card, cardParams)
 
         frame.addView(
             overlay,
@@ -791,39 +770,67 @@ class MainActivity : Activity() {
 
         vpnOverlayView = overlay
 
+        val messages = arrayOf(
+            "Buscando servidor disponible...",
+            "Negociando protocolo WireGuard...",
+            "Creando túnel seguro...",
+            "Verificando ruta de conexión...",
+            "Asignando nueva dirección IP...",
+            "Finalizando conexión..."
+        )
+
         vpnSimulationTimer = object : android.os.CountDownTimer(8000, 250) {
+
             override fun onTick(millisUntilFinished: Long) {
                 val elapsed = 8000L - millisUntilFinished
                 val percent = (elapsed * 100 / 8000).toInt()
+
                 progress.progress = percent
 
                 status.text = when {
                     percent < 20 -> "LOCALIZANDO SERVIDOR..."
                     percent < 45 -> "NEGOCIANDO CONEXIÓN..."
-                    percent < 70 -> "CREANDO TÚNEL..."
-                    else -> "FINALIZANDO..."
+                    percent < 70 -> "CREANDO TÚNEL CIFRADO..."
+                    else -> "ASIGNANDO NUEVA RUTA..."
                 }
 
                 server.text = when {
-                    percent < 35 -> "Servidor: buscando ubicación"
-                    else -> "Servidor: Ámsterdam, Países Bajos"
+                    percent < 35 -> "Servidor: buscando mejor ubicación"
+                    percent < 70 -> "Servidor: Ámsterdam, Países Bajos"
+                    else -> "Servidor: Ámsterdam • conectado"
                 }
 
-                log.text = "PROCESO VISUAL: $percent%"
+                val index = (percent / 18).coerceAtMost(messages.lastIndex)
+
+                log.text = messages.take(index + 1)
+                    .joinToString("\n") { "› $it" }
+
+                lock.rotation = if (percent % 20 < 10) -8f else 8f
             }
 
             override fun onFinish() {
                 vpnSimulationTimer = null
+
                 progress.progress = 100
-                status.text = "✓ SIMULACIÓN COMPLETADA"
+                status.text = "✓ VPN ACTUALIZADA"
                 status.setTextColor(green)
-                server.text = "Servidor simulado: Ámsterdam"
-                log.text = "PRESENTACIÓN FINALIZADA"
+
+                server.text = "Servidor: Ámsterdam, Países Bajos"
+
+                oldIp.text = "IP ANTERIOR: 198.51.100.24"
+
+                newIp.text = "IP ACTUALIZADA\nNUEVA IP: 203.0.113.58"
+                newIp.setTextColor(green)
+
+                log.text = "TÚNEL: LISTO\nRUTA: ESTABLECIDA\nESTADO: CONECTADO"
+
+                lock.rotation = 0f
+                lock.setTextColor(green)
 
                 close.text = "FINALIZAR"
                 close.background = GradientDrawable().apply {
                     setColor(green)
-                    cornerRadius = dp(11).toFloat()
+                    cornerRadius = dp(12).toFloat()
                 }
 
                 close.setOnClickListener {
@@ -840,16 +847,16 @@ class MainActivity : Activity() {
         vpnOverlayView?.let { view ->
             (view.parent as? ViewGroup)?.removeView(view)
         }
+
         vpnOverlayView = null
 
         if (activated) {
             prefs.edit().putBoolean("track_active", true).apply()
             showHome()
-            toast("SIMULACIÓN VPN COMPLETADA")
+            toast("VPN ACTUALIZADA")
         }
     }
 
-    // SIMULACIÓN ANTI-CHUPONEO
     private fun showAntiChuponeoOverlay() {
         val frame = overlayFrame ?: return
         if (overlayTimer != null) return
@@ -857,22 +864,30 @@ class MainActivity : Activity() {
         val overlay = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(16), dp(18), dp(16), dp(18))
-            setBackgroundColor(Color.argb(235, 1, 7, 19))
+            setPadding(dp(20), dp(25), dp(20), dp(25))
+            setBackgroundColor(Color.argb(190, 1, 7, 15))
         }
 
-        overlay.addView(label("🐉 DRAGÓN ZETA", 23f, cyan, true))
-        overlay.addView(label("CYBER SECURITY TERMINAL", 13f, green, true))
-        overlay.addView(label("ANÁLISIS VISUAL DEL SISTEMA", 10f, Color.LTGRAY))
+        overlay.addView(label("🐉 DRAGÓN ZETA", 24f, cyan, true))
+        overlay.addView(
+            label("CYBER SECURITY TERMINAL", 13f, green, true)
+        )
+        overlay.addView(
+            label("NETWORK ANALYSIS • SYSTEM SCAN", 10f, Color.LTGRAY)
+        )
 
         val codeView = TextView(this).apply {
-            textSize = 11f
+            textSize = 12f
             typeface = Typeface.MONOSPACE
             setTextColor(green)
             gravity = Gravity.START
-            setPadding(dp(10), dp(10), dp(10), dp(10))
-            setLineSpacing(dp(3).toFloat(), 1f)
-            background = panel(green, true)
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            setLineSpacing(dp(4).toFloat(), 1f)
+            background = GradientDrawable().apply {
+                setColor(Color.argb(90, 0, 20, 15))
+                setStroke(dp(1), Color.argb(150, 0, 230, 130))
+                cornerRadius = dp(12).toFloat()
+            }
         }
 
         overlay.addView(
@@ -882,11 +897,11 @@ class MainActivity : Activity() {
                 0,
                 1f
             ).apply {
-                setMargins(0, dp(12), 0, dp(12))
+                setMargins(0, dp(18), 0, dp(15))
             }
         )
 
-        val status = label("INICIANDO ANÁLISIS...", 15f, cyan, true)
+        val status = label("INICIANDO ANÁLISIS...", 17f, cyan, true)
         overlay.addView(status)
 
         val progress = ProgressBar(
@@ -897,22 +912,24 @@ class MainActivity : Activity() {
             max = 100
             this.progress = 0
             progressTintList = ColorStateList.valueOf(green)
-            progressBackgroundTintList = ColorStateList.valueOf(Color.DKGRAY)
+            progressBackgroundTintList =
+                ColorStateList.valueOf(Color.DKGRAY)
         }
 
         overlay.addView(
             progress,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(10)
+                dp(12)
             ).apply {
-                setMargins(dp(8), dp(10), dp(8), dp(12))
+                setMargins(dp(10), dp(12), dp(10), dp(15))
             }
         )
 
-        val closeButton = makeButton("FINALIZAR", green) {
+        val closeButton = makeButton("RED ASEGURADA", green) {
             closeAntiChuponeoOverlay()
         }
+
         closeButton.visibility = View.GONE
         addButton(overlay, closeButton)
 
@@ -923,31 +940,40 @@ class MainActivity : Activity() {
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         )
-        antiOverlayView = overlay
 
         val codeLines = arrayOf(
-            "root@dragonzeta:~$ ./visual_scan.sh",
+            "root@dragonzeta:~$ ./network_scan.sh",
             "",
-            "[INIT] Iniciando presentación...",
-            "[ OK ] Módulo visual preparado",
-            "[SCAN] Revisando estado visual...",
-            "[INFO] Comprobando interfaz...",
-            "[ OK ] Secuencia completada",
-            "FIREWALL_STATUS: DEMOSTRACIÓN",
-            "NETWORK_STATUS: SIMULACIÓN",
+            "[INIT] Loading security modules...",
+            "[ OK ] Firewall module initialized",
+            "[SCAN] Inspecting network interfaces...",
+            "[INFO] Checking connection integrity",
+            "[SCAN] Reviewing access permissions...",
+            "[ OK ] Secure protocols verified",
+            "[INFO] Analyzing network traffic...",
+            "[SCAN] Running security diagnostics...",
+            "[ OK ] Verification completed",
+            "",
+            "01001001 01001110 01000110 01001111",
+            "0x4E4554 0x534543 0x555245",
+            "TCP_CHECK: PASS",
+            "FIREWALL_STATUS: ACTIVE",
+            "NETWORK_INTEGRITY: VERIFIED",
             "",
             "root@dragonzeta:~$ scan_complete"
         )
 
-        codeView.text = codeLines.take(2).joinToString("\n")
+        codeView.text = codeLines.take(3).joinToString("\n")
 
         overlayTimer = object : android.os.CountDownTimer(7000, 500) {
+
             override fun onTick(millisUntilFinished: Long) {
                 val elapsed = 7000L - millisUntilFinished
                 val percent = (elapsed * 100 / 7000).toInt()
+
                 progress.progress = percent
 
-                val visibleLines = (2 + elapsed / 400)
+                val visibleLines = (3 + elapsed / 300)
                     .toInt()
                     .coerceAtMost(codeLines.size)
 
@@ -957,9 +983,9 @@ class MainActivity : Activity() {
 
                 status.text = when {
                     percent < 25 -> "INICIANDO SISTEMA..."
-                    percent < 50 -> "REVISANDO INTERFAZ..."
-                    percent < 75 -> "PROCESANDO..."
-                    else -> "FINALIZANDO..."
+                    percent < 50 -> "ANALIZANDO CONEXIÓN..."
+                    percent < 75 -> "VERIFICANDO SEGURIDAD..."
+                    else -> "FINALIZANDO DIAGNÓSTICO..."
                 }
             }
 
@@ -967,9 +993,12 @@ class MainActivity : Activity() {
                 overlayTimer = null
                 progress.progress = 100
                 codeView.text = codeLines.joinToString("\n")
-                prefs.edit().putBoolean("spy_active", true).apply()
 
-                status.text = "✓ PROCESO VISUAL COMPLETADO"
+                prefs.edit()
+                    .putBoolean("spy_active", true)
+                    .apply()
+
+                status.text = "✓ RED SEGURA\nFUNCIÓN ACTIVADA"
                 status.setTextColor(green)
                 closeButton.visibility = View.VISIBLE
             }
@@ -980,10 +1009,12 @@ class MainActivity : Activity() {
         overlayTimer?.cancel()
         overlayTimer = null
 
-        antiOverlayView?.let { view ->
-            (view.parent as? ViewGroup)?.removeView(view)
+        val frame = overlayFrame
+        val overlay = frame?.getChildAt(frame.childCount - 1)
+
+        if (overlay != null && overlay !== frame.getChildAt(0)) {
+            frame.removeView(overlay)
         }
-        antiOverlayView = null
 
         showHome()
         toast("ANTI-CHUPONEO ACTIVADO.")
@@ -991,57 +1022,53 @@ class MainActivity : Activity() {
 
     // ANTI-HACK WSP
     private fun addWhatsAppProtection(root: LinearLayout) {
+        val card = createCard(root, "🛡️ ANTI-HACK WSP", cyan)
+
+        card.addView(
+            label(
+                "Sistema visual de protección de WhatsApp",
+                13f,
+                Color.LTGRAY
+            )
+        )
+
         val active = prefs.getBoolean(
             "whatsapp_protection_active",
             false
         )
 
-        val card = createCard(root, "🛡️ ANTI-HACK WSP", green)
-
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-
-        val icon = label("◉", 40f, green, true)
-        row.addView(
-            icon,
-            LinearLayout.LayoutParams(dp(60), dp(60))
+        val shield = label(
+            "🛡️",
+            55f,
+            if (active) green else cyan,
+            true
         )
 
-        val info = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-
-        info.addView(
-            label(
-                "Sistema visual de protección de WhatsApp",
-                11f,
-                Color.WHITE
+        card.addView(
+            shield,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(95)
             )
         )
 
         val status = label(
-            if (active) "✓ REVISIÓN VISUAL COMPLETADA"
+            if (active) "REVISIÓN VISUAL COMPLETADA"
             else "SISTEMA EN ESPERA",
-            12f,
+            19f,
             if (active) green else cyan,
             true
         )
-        info.addView(status)
 
-        row.addView(
-            info,
-            LinearLayout.LayoutParams(0, dp(60), 1f)
-        )
-        card.addView(row)
+        card.addView(status)
 
         val detail = label(
-            if (active) "Proceso visual finalizado"
-            else "Presiona para comenzar",
-            10f,
+            if (active) "Revisión visual finalizada"
+            else "Presiona el botón para comenzar",
+            12f,
             Color.LTGRAY
         )
+
         card.addView(detail)
 
         val progress = ProgressBar(
@@ -1055,23 +1082,23 @@ class MainActivity : Activity() {
                 if (active) green else cyan
             )
             progressBackgroundTintList =
-                ColorStateList.valueOf(Color.DKGRAY)
+                ColorStateList.valueOf(Color.rgb(35, 48, 65))
         }
 
         card.addView(
             progress,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(8)
+                dp(12)
             ).apply {
-                setMargins(dp(6), dp(7), dp(6), dp(7))
+                setMargins(dp(12), dp(12), dp(12), dp(12))
             }
         )
 
         val button = makeButton(
             if (active) "ANTI-HACK WSP ACTIVADO"
             else "ACTIVAR ANTI-HACK WSP",
-            green
+            if (active) green else cyan
         ) {}
 
         addButton(card, button)
@@ -1089,26 +1116,38 @@ class MainActivity : Activity() {
                     .putBoolean("whatsapp_protection_active", false)
                     .apply()
 
-                icon.animate().cancel()
-                icon.rotation = 0f
+                shield.animate().cancel()
+                shield.rotation = 0f
+                shield.setTextColor(cyan)
+
                 status.text = "SISTEMA EN ESPERA"
                 status.setTextColor(cyan)
-                detail.text = "Presiona para comenzar"
+                detail.text = "Presiona el botón para comenzar"
                 progress.progress = 0
                 progress.progressTintList =
                     ColorStateList.valueOf(cyan)
 
                 button.text = "ACTIVAR ANTI-HACK WSP"
+                button.background = GradientDrawable().apply {
+                    setColor(cyan)
+                    cornerRadius = dp(12).toFloat()
+                }
+
                 toast("ANTI-HACK WSP desactivado.")
             } else {
                 button.isEnabled = false
-                button.text = "REVISANDO..."
-                status.text = "REVISIÓN VISUAL EN CURSO..."
+                button.text = "REVISANDO CUENTA..."
+                status.text = "REVISANDO CUENTA..."
                 status.setTextColor(cyan)
-                detail.text = "Procesando... 0%"
+                detail.text = "Realizando revisión visual..."
+                shield.setTextColor(cyan)
+
+                progress.progress = 0
+                progress.progressTintList =
+                    ColorStateList.valueOf(cyan)
 
                 whatsappScanAnimator = ObjectAnimator.ofFloat(
-                    icon,
+                    shield,
                     View.ROTATION,
                     0f,
                     360f
@@ -1121,12 +1160,16 @@ class MainActivity : Activity() {
 
                 whatsappScanTimer =
                     object : android.os.CountDownTimer(5000, 100) {
+
                         override fun onTick(millisUntilFinished: Long) {
                             val percent =
                                 ((5000L - millisUntilFinished) * 100 / 5000)
                                     .toInt()
+
                             progress.progress = percent
-                            detail.text = "Revisión visual... $percent%"
+                            status.text = "REVISANDO CUENTA..."
+                            detail.text =
+                                "Revisión visual... $percent%"
                         }
 
                         override fun onFinish() {
@@ -1134,13 +1177,15 @@ class MainActivity : Activity() {
                             whatsappScanAnimator?.cancel()
                             whatsappScanAnimator = null
 
-                            icon.rotation = 0f
-                            status.text = "✓ REVISIÓN VISUAL COMPLETADA"
-                            status.setTextColor(green)
-                            detail.text = "PROCESO FINALIZADO"
+                            shield.rotation = 0f
+                            shield.setTextColor(green)
                             progress.progress = 100
                             progress.progressTintList =
                                 ColorStateList.valueOf(green)
+
+                            status.text = "REVISIÓN VISUAL COMPLETADA"
+                            status.setTextColor(green)
+                            detail.text = "PROCESO FINALIZADO"
 
                             prefs.edit()
                                 .putBoolean(
@@ -1151,6 +1196,11 @@ class MainActivity : Activity() {
 
                             button.text = "ANTI-HACK WSP ACTIVADO"
                             button.isEnabled = true
+                            button.background = GradientDrawable().apply {
+                                setColor(green)
+                                cornerRadius = dp(12).toFloat()
+                            }
+
                             toast("REVISIÓN VISUAL COMPLETADA")
                         }
                     }.start()
@@ -1158,7 +1208,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // CERRAR SESIÓN
     private fun logout() {
         vpnSimulationTimer?.cancel()
         vpnSimulationTimer = null
@@ -1166,15 +1215,11 @@ class MainActivity : Activity() {
         vpnOverlayView?.let { view ->
             (view.parent as? ViewGroup)?.removeView(view)
         }
+
         vpnOverlayView = null
 
         overlayTimer?.cancel()
         overlayTimer = null
-
-        antiOverlayView?.let { view ->
-            (view.parent as? ViewGroup)?.removeView(view)
-        }
-        antiOverlayView = null
 
         whatsappScanTimer?.cancel()
         whatsappScanTimer = null
@@ -1197,7 +1242,6 @@ class MainActivity : Activity() {
 
         overlayTimer?.cancel()
         overlayTimer = null
-        antiOverlayView = null
 
         whatsappScanTimer?.cancel()
         whatsappScanTimer = null
