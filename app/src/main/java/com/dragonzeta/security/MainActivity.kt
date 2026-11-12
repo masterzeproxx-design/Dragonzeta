@@ -29,6 +29,7 @@ class MainActivity : Activity() {
     private val green = Color.rgb(0, 230, 130)
     private val red = Color.rgb(255, 55, 75)
     private val amber = Color.rgb(255, 180, 40)
+    private val blueButton = Color.rgb(0, 90, 255)
 
     private val accessUser = "ZEPROXX"
     private val accessPassword = "16071997"
@@ -57,7 +58,6 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Mantener despejada la barra de hora, batería y notificaciones
         window.statusBarColor = bg
         window.navigationBarColor = bg
 
@@ -145,24 +145,20 @@ class MainActivity : Activity() {
         )
     }
 
-    // CONTENEDOR PRINCIPAL AJUSTADO
     private fun createRoot(): LinearLayout {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-
             setPadding(
                 dp(18),
                 dp(12),
                 dp(18),
                 dp(25)
             )
-
             setBackgroundColor(bg)
         }
     }
 
-    // PANTALLA CON MARCA DE AGUA
     private fun showScreen(
         root: LinearLayout,
         watermark: Boolean = false
@@ -248,26 +244,56 @@ class MainActivity : Activity() {
         return card
     }
 
+    // ENCABEZADO CON LOGO ORIGINAL
     private fun addHeader(root: LinearLayout) {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(dp(8), dp(12), dp(8), dp(12))
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(5), dp(5), dp(5), dp(5))
+        }
+
+        val logo = ImageView(this).apply {
+            setImageResource(R.drawable.dragon_zeta_logo)
+            scaleType = ImageView.ScaleType.FIT_CENTER
         }
 
         header.addView(
-            label("🐉 DRAGÓN ZETA", 23f, cyan, true),
-            LinearLayout.LayoutParams(0, dp(55), 1f)
+            logo,
+            LinearLayout.LayoutParams(dp(52), dp(55))
+        )
+
+        header.addView(
+            label("DRAGÓN ZETA", 21f, cyan, true),
+            LinearLayout.LayoutParams(
+                0,
+                dp(55),
+                1f
+            )
         )
 
         val paid = label("PAGADO", 12f, Color.BLACK, true)
         paid.background = GradientDrawable().apply {
             setColor(green)
             cornerRadius = dp(20).toFloat()
+            setStroke(dp(1), Color.WHITE)
         }
 
         header.addView(paid)
         root.addView(header)
+
+        val divider = View(this).apply {
+            setBackgroundColor(cyan)
+        }
+
+        root.addView(
+            divider,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(1)
+            ).apply {
+                setMargins(dp(5), dp(5), dp(5), dp(8))
+            }
+        )
     }
 
     private fun showLogin() {
@@ -589,10 +615,11 @@ class MainActivity : Activity() {
     ) {
         val active = prefs.getBoolean("${key}_active", false)
 
+        val optionColor = if (key == "spy") green else cyan
         val card = createCard(
             root,
             title,
-            if (active) green else cyan
+            if (active) green else optionColor
         )
 
         if (key == "spy") {
@@ -611,7 +638,7 @@ class MainActivity : Activity() {
                 makeButton(
                     if (active) "ANTI-CHUPONEO ACTIVADO"
                     else "ACTIVAR ANTI-CHUPONEO",
-                    if (active) green else cyan
+                    if (active) green else blueButton
                 ) {
                     if (prefs.getBoolean("spy_active", false)) {
                         prefs.edit()
@@ -640,7 +667,7 @@ class MainActivity : Activity() {
                 makeButton(
                     if (active) "DESACTIVAR VPN ACTUALIZADA"
                     else "ACTUALIZAR VPN",
-                    if (active) green else cyan
+                    if (active) green else blueButton
                 ) {
                     if (vpnSimulationTimer != null) return@makeButton
 
@@ -1022,7 +1049,7 @@ class MainActivity : Activity() {
 
     // ANTI-HACK WSP
     private fun addWhatsAppProtection(root: LinearLayout) {
-        val card = createCard(root, "🛡️ ANTI-HACK WSP", cyan)
+        val card = createCard(root, "🛡️ ANTI-HACK WSP", green)
 
         card.addView(
             label(
