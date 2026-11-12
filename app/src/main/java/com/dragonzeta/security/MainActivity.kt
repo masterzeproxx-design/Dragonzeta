@@ -151,8 +151,8 @@ class MainActivity : Activity() {
         frame.addView(
             scroll,
             FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
             )
         )
 
@@ -548,8 +548,8 @@ class MainActivity : Activity() {
         } else if (key == "track") {
             card.addView(
                 label(
-                    if (active) "✓ VPN SIMULADA ACTIVADA"
-                    else "Cambia visualmente de servidor VPN",
+                    if (active) "✓ VPN ACTUALIZADA"
+                    else "Actualiza la presentación de tu conexión",
                     12f,
                     if (active) green else Color.LTGRAY,
                     active
@@ -559,8 +559,8 @@ class MainActivity : Activity() {
             addButton(
                 card,
                 makeButton(
-                    if (active) "DESACTIVAR VPN SIMULADA"
-                    else "CONECTAR A VPN",
+                    if (active) "DESACTIVAR VPN ACTUALIZADA"
+                    else "ACTUALIZAR VPN",
                     if (active) green else cyan
                 ) {
                     if (vpnSimulationTimer != null) return@makeButton
@@ -568,7 +568,7 @@ class MainActivity : Activity() {
                     if (prefs.getBoolean("track_active", false)) {
                         prefs.edit().putBoolean("track_active", false).apply()
                         showHome()
-                        toast("VPN simulada desconectada.")
+                        toast("VPN desconectada.")
                     } else {
                         showVpnSimulationOverlay()
                     }
@@ -577,7 +577,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // VENTANA TRANSLÚCIDA DE CONEXIÓN VPN (SIMULACIÓN VISUAL)
+    // VENTANA DE ACTUALIZACIÓN VPN
     private fun showVpnSimulationOverlay() {
         val frame = overlayFrame ?: return
         if (vpnSimulationTimer != null) return
@@ -602,7 +602,7 @@ class MainActivity : Activity() {
 
         val heading = label("🐉 DRAGÓN ZETA", 22f, cyan, true)
         card.addView(heading)
-        card.addView(label("TÚNEL VPN SEGURO", 14f, green, true))
+        card.addView(label("VPN ACTUALIZADA", 14f, green, true))
 
         val lock = label("◈", 54f, cyan, true)
         card.addView(lock)
@@ -623,6 +623,7 @@ class MainActivity : Activity() {
             progressTintList = ColorStateList.valueOf(cyan)
             progressBackgroundTintList = ColorStateList.valueOf(Color.DKGRAY)
         }
+
         card.addView(
             progress,
             LinearLayout.LayoutParams(
@@ -640,8 +641,10 @@ class MainActivity : Activity() {
                 cornerRadius = dp(12).toFloat()
             }
         }
+
         val oldIp = label("IP ANTERIOR: —", 12f, Color.LTGRAY)
-        val newIp = label("NUEVA IP: conectando...", 12f, cyan, true)
+        val newIp = label("IP ACTUALIZADA: conectando...", 12f, cyan, true)
+
         ipPanel.addView(oldIp)
         ipPanel.addView(newIp)
         card.addView(ipPanel)
@@ -654,19 +657,13 @@ class MainActivity : Activity() {
             gravity = Gravity.START
             setPadding(dp(8), dp(12), dp(8), dp(8))
         }
-        card.addView(log)
 
-        card.addView(
-            label(
-                "Demostración visual: no cambia la IP real ni activa una VPN.",
-                10f,
-                Color.GRAY
-            )
-        )
+        card.addView(log)
 
         val close = makeButton("CANCELAR", red) {
             closeVpnSimulationOverlay(false)
         }
+
         card.addView(
             close,
             LinearLayout.LayoutParams(
@@ -676,20 +673,23 @@ class MainActivity : Activity() {
         )
 
         val cardParams = FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
             Gravity.CENTER
         ).apply {
             setMargins(dp(22), dp(18), dp(22), dp(18))
         }
+
         overlay.addView(card, cardParams)
+
         frame.addView(
             overlay,
             FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
             )
         )
+
         vpnOverlayView = overlay
 
         val messages = arrayOf(
@@ -697,49 +697,67 @@ class MainActivity : Activity() {
             "Negociando protocolo WireGuard...",
             "Creando túnel seguro...",
             "Verificando ruta de conexión...",
-            "Asignando dirección IP de demostración...",
+            "Asignando nueva dirección IP...",
             "Finalizando conexión..."
         )
 
         vpnSimulationTimer = object : android.os.CountDownTimer(8000, 250) {
+
             override fun onTick(millisUntilFinished: Long) {
                 val elapsed = 8000L - millisUntilFinished
                 val percent = (elapsed * 100 / 8000).toInt()
+
                 progress.progress = percent
+
                 status.text = when {
                     percent < 20 -> "LOCALIZANDO SERVIDOR..."
                     percent < 45 -> "NEGOCIANDO CONEXIÓN..."
                     percent < 70 -> "CREANDO TÚNEL CIFRADO..."
                     else -> "ASIGNANDO NUEVA RUTA..."
                 }
+
                 server.text = when {
                     percent < 35 -> "Servidor: buscando mejor ubicación"
                     percent < 70 -> "Servidor: Ámsterdam, Países Bajos"
                     else -> "Servidor: Ámsterdam • conectado"
                 }
+
                 val index = ((percent / 18).coerceAtMost(messages.lastIndex))
-                log.text = messages.take(index + 1).joinToString("\n") { "› $it" }
+
+                log.text = messages.take(index + 1)
+                    .joinToString("\n") { "› $it" }
+
                 lock.rotation = if (percent % 20 < 10) -8f else 8f
             }
 
             override fun onFinish() {
                 vpnSimulationTimer = null
+
                 progress.progress = 100
-                status.text = "✓ VPN SIMULADA ACTIVADA"
+                status.text = "✓ VPN ACTUALIZADA"
                 status.setTextColor(green)
+
                 server.text = "Servidor: Ámsterdam, Países Bajos"
+
                 oldIp.text = "IP ANTERIOR: 198.51.100.24"
-                newIp.text = "IP DE DEMOSTRACIÓN: 203.0.113.58"
+
+                newIp.text = "IP ACTUALIZADA\nNUEVA IP: 203.0.113.58"
                 newIp.setTextColor(green)
+
                 log.text = "TÚNEL: LISTO\nRUTA: ESTABLECIDA\nESTADO: CONECTADO"
+
                 lock.rotation = 0f
                 lock.setTextColor(green)
+
                 close.text = "FINALIZAR"
                 close.background = GradientDrawable().apply {
                     setColor(green)
                     cornerRadius = dp(12).toFloat()
                 }
-                close.setOnClickListener { closeVpnSimulationOverlay(true) }
+
+                close.setOnClickListener {
+                    closeVpnSimulationOverlay(true)
+                }
             }
         }.start()
     }
@@ -747,15 +765,17 @@ class MainActivity : Activity() {
     private fun closeVpnSimulationOverlay(activated: Boolean) {
         vpnSimulationTimer?.cancel()
         vpnSimulationTimer = null
+
         vpnOverlayView?.let { view ->
             (view.parent as? ViewGroup)?.removeView(view)
         }
+
         vpnOverlayView = null
 
         if (activated) {
             prefs.edit().putBoolean("track_active", true).apply()
             showHome()
-            toast("VPN SIMULADA ACTIVADA")
+            toast("VPN ACTUALIZADA")
         }
     }
 
@@ -838,8 +858,8 @@ class MainActivity : Activity() {
         frame.addView(
             overlay,
             FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
             )
         )
 
@@ -868,9 +888,11 @@ class MainActivity : Activity() {
         codeView.text = codeLines.take(3).joinToString("\n")
 
         overlayTimer = object : android.os.CountDownTimer(7000, 500) {
+
             override fun onTick(millisUntilFinished: Long) {
                 val elapsed = 7000L - millisUntilFinished
                 val percent = (elapsed * 100 / 7000).toInt()
+
                 progress.progress = percent
 
                 val visibleLines = (3 + elapsed / 300)
@@ -1060,6 +1082,7 @@ class MainActivity : Activity() {
 
                 whatsappScanTimer =
                     object : android.os.CountDownTimer(5000, 100) {
+
                         override fun onTick(millisUntilFinished: Long) {
                             val percent =
                                 ((5000L - millisUntilFinished) * 100 / 5000)
@@ -1110,9 +1133,11 @@ class MainActivity : Activity() {
     private fun logout() {
         vpnSimulationTimer?.cancel()
         vpnSimulationTimer = null
+
         vpnOverlayView?.let { view ->
             (view.parent as? ViewGroup)?.removeView(view)
         }
+
         vpnOverlayView = null
 
         overlayTimer?.cancel()
