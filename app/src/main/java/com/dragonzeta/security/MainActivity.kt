@@ -153,12 +153,7 @@ class MainActivity : Activity() {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            setPadding(
-                dp(17),
-                dp(28),
-                dp(17),
-                dp(22)
-            )
+            setPadding(dp(17), dp(28), dp(17), dp(22))
             setBackgroundColor(Color.TRANSPARENT)
         }
     }
@@ -171,7 +166,7 @@ class MainActivity : Activity() {
 
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = dp(2.4).toFloat()
+            strokeWidth = 2.4f * resources.displayMetrics.density
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
             color = iconColor
@@ -187,8 +182,12 @@ class MainActivity : Activity() {
             val top = cy - s / 2f
 
             paint.style = Paint.Style.FILL
-            paint.color = Color.argb(28, Color.red(iconColor),
-                Color.green(iconColor), Color.blue(iconColor))
+            paint.color = Color.argb(
+                28,
+                Color.red(iconColor),
+                Color.green(iconColor),
+                Color.blue(iconColor)
+            )
             canvas.drawCircle(cx, cy, s * 0.49f, paint)
 
             paint.style = Paint.Style.STROKE
@@ -196,7 +195,7 @@ class MainActivity : Activity() {
             paint.color = iconColor
             canvas.drawCircle(cx, cy, s * 0.49f, paint)
 
-            paint.strokeWidth = dp(2.6).toFloat()
+            paint.strokeWidth = 2.6f * resources.displayMetrics.density
 
             when (iconType) {
                 "mic" -> {
@@ -429,12 +428,8 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
         }
 
-        nameColumn.addView(
-            label("DRAGÓN ZETA", 20f, cyan, true)
-        )
-        nameColumn.addView(
-            label("CYBER SECURITY SYSTEM", 9f, Color.LTGRAY, true)
-        )
+        nameColumn.addView(label("DRAGÓN ZETA", 20f, cyan, true))
+        nameColumn.addView(label("CYBER SECURITY SYSTEM", 9f, Color.LTGRAY, true))
 
         header.addView(
             nameColumn,
@@ -478,9 +473,7 @@ class MainActivity : Activity() {
     private fun showLogin() {
         val root = createRoot()
 
-        root.addView(
-            label("SISTEMA DE ACCESO", 12f, green, true)
-        )
+        root.addView(label("SISTEMA DE ACCESO", 12f, green, true))
 
         val logoFrame = FrameLayout(this).apply {
             background = GradientDrawable().apply {
@@ -515,9 +508,7 @@ class MainActivity : Activity() {
 
         root.addView(label("DRAGÓN ZETA", 26f, cyan, true))
         root.addView(label("SEGURIDAD PERSONAL", 12f, green, true))
-        root.addView(
-            label("PROTECCIÓN • CONTROL • SEGURIDAD", 9f, Color.LTGRAY)
-        )
+        root.addView(label("PROTECCIÓN • CONTROL • SEGURIDAD", 9f, Color.LTGRAY))
 
         val card = createCard(root, "ACCESO DE USUARIO", cyan)
 
@@ -574,10 +565,7 @@ class MainActivity : Activity() {
             }
         })
 
-        root.addView(
-            label("SISTEMA DE PROTECCIÓN", 10f, Color.GRAY)
-        )
-
+        root.addView(label("SISTEMA DE PROTECCIÓN", 10f, Color.GRAY))
         showScreen(root)
     }
 
@@ -591,33 +579,24 @@ class MainActivity : Activity() {
         val root = createRoot()
         addHeader(root)
 
-        root.addView(
-            label("PANEL DE CONTROL", 21f, Color.WHITE, true)
-        )
-        root.addView(
-            label("CENTRO DE SEGURIDAD PERSONAL", 10f, cyan, true)
-        )
+        root.addView(label("PANEL DE CONTROL", 21f, Color.WHITE, true))
+        root.addView(label("CENTRO DE SEGURIDAD PERSONAL", 10f, cyan, true))
 
         val profile = createCard(root, "PERFIL DE USUARIO", cyan)
         profile.addView(label("ZEPROXX", 22f, Color.WHITE, true))
         profile.addView(label("USUARIO AUTORIZADO", 12f, green, true))
-        profile.addView(
-            label("ESTADO: SISTEMA DISPONIBLE", 11f, Color.LTGRAY)
-        )
+        profile.addView(label("ESTADO: SISTEMA DISPONIBLE", 11f, Color.LTGRAY))
 
         val statusCard = createCard(root, "PROTECCIÓN DEL SISTEMA", green)
-        statusCard.addView(CyberIconView("shield", green),
+        statusCard.addView(
+            CyberIconView("shield", green),
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dp(76)
             )
         )
-        statusCard.addView(
-            label("DRAGÓN ZETA ESTÁ LISTO", 15f, Color.WHITE, true)
-        )
-        statusCard.addView(
-            label("Controla tus opciones desde este panel", 11f, Color.LTGRAY)
-        )
+        statusCard.addView(label("DRAGÓN ZETA ESTÁ LISTO", 15f, Color.WHITE, true))
+        statusCard.addView(label("Controla tus opciones desde este panel", 11f, Color.LTGRAY))
 
         addSOSCard(root)
         addOption(root, "ANTI-CHUPONEO", "spy")
@@ -628,10 +607,7 @@ class MainActivity : Activity() {
             logout()
         })
 
-        root.addView(
-            label("DRAGÓN ZETA • VERSIÓN 1.0", 10f, Color.GRAY)
-        )
-
+        root.addView(label("DRAGÓN ZETA • VERSIÓN 1.0", 10f, Color.GRAY))
         showScreen(root, watermark = true)
     }
 
@@ -640,11 +616,7 @@ class MainActivity : Activity() {
         val active = prefs.getBoolean("sos_configured", false)
         val number = prefs.getString("sos_phone", "") ?: ""
 
-        val card = createCard(
-            root,
-            "BOTÓN SOS",
-            if (active) green else red
-        )
+        val card = createCard(root, "BOTÓN SOS", if (active) green else red)
 
         card.addView(
             CyberIconView("sos", if (active) green else red),
@@ -656,9 +628,7 @@ class MainActivity : Activity() {
 
         if (active) {
             card.addView(label("SOS ACTIVADO", 20f, green, true))
-            card.addView(
-                label("Número de emergencia: $number", 12f, Color.WHITE)
-            )
+            card.addView(label("Número de emergencia: $number", 12f, Color.WHITE))
             card.addView(
                 label(
                     "Dos pulsaciones de VOLUMEN ARRIBA activan la alerta.",
@@ -676,29 +646,20 @@ class MainActivity : Activity() {
             })
 
             addButton(card, makeButton("CAMBIAR NÚMERO", cyan) {
-                prefs.edit()
-                    .putBoolean("sos_configured", false)
-                    .apply()
+                prefs.edit().putBoolean("sos_configured", false).apply()
                 showHome()
             })
 
-            addButton(
-                card,
-                makeButton("CONFIGURAR ACTIVACIÓN POR VOLUMEN", green) {
-                    try {
-                        startActivity(
-                            Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                        )
-                    } catch (e: Exception) {
-                        toast("No se pudieron abrir los ajustes.")
-                    }
+            addButton(card, makeButton("CONFIGURAR ACTIVACIÓN POR VOLUMEN", green) {
+                try {
+                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                } catch (e: Exception) {
+                    toast("No se pudieron abrir los ajustes.")
                 }
-            )
+            })
 
         } else {
-            card.addView(
-                label("Configura tu número de emergencia", 13f, Color.WHITE)
-            )
+            card.addView(label("Configura tu número de emergencia", 13f, Color.WHITE))
 
             val phone = EditText(this).apply {
                 hint = "+51 999 999 999"
@@ -741,9 +702,7 @@ class MainActivity : Activity() {
     private fun activateSOS(number: String) {
         pendingSOSNumber = number
 
-        prefs.edit()
-            .putString("sos_phone", number)
-            .apply()
+        prefs.edit().putString("sos_phone", number).apply()
 
         if (checkSelfPermission(Manifest.permission.CALL_PHONE) !=
             PackageManager.PERMISSION_GRANTED
@@ -784,11 +743,7 @@ class MainActivity : Activity() {
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
-        super.onRequestPermissionsResult(
-            requestCode,
-            permissions,
-            grantResults
-        )
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         val granted = grantResults.isNotEmpty() &&
             grantResults[0] == PackageManager.PERMISSION_GRANTED
@@ -822,11 +777,7 @@ class MainActivity : Activity() {
         val isSpy = key == "spy"
         val optionColor = if (isSpy) green else cyan
 
-        val card = createCard(
-            root,
-            title,
-            if (active) green else optionColor
-        )
+        val card = createCard(root, title, if (active) green else optionColor)
 
         card.addView(
             CyberIconView(
@@ -850,24 +801,19 @@ class MainActivity : Activity() {
                 )
             )
 
-            addButton(
-                card,
-                makeButton(
-                    if (active) "ANTI-CHUPONEO ACTIVADO"
-                    else "ACTIVAR ANTI-CHUPONEO",
-                    if (active) green else blueButton
-                ) {
-                    if (prefs.getBoolean("spy_active", false)) {
-                        prefs.edit()
-                            .putBoolean("spy_active", false)
-                            .apply()
-                        showHome()
-                        toast("ANTI-CHUPONEO DESACTIVADO.")
-                    } else {
-                        showAntiChuponeoOverlay()
-                    }
+            addButton(card, makeButton(
+                if (active) "ANTI-CHUPONEO ACTIVADO"
+                else "ACTIVAR ANTI-CHUPONEO",
+                if (active) green else blueButton
+            ) {
+                if (prefs.getBoolean("spy_active", false)) {
+                    prefs.edit().putBoolean("spy_active", false).apply()
+                    showHome()
+                    toast("ANTI-CHUPONEO DESACTIVADO.")
+                } else {
+                    showAntiChuponeoOverlay()
                 }
-            )
+            })
         } else {
             card.addView(
                 label(
@@ -879,26 +825,21 @@ class MainActivity : Activity() {
                 )
             )
 
-            addButton(
-                card,
-                makeButton(
-                    if (active) "DESACTIVAR VPN ACTUALIZADA"
-                    else "ACTUALIZAR VPN",
-                    if (active) green else blueButton
-                ) {
-                    if (vpnSimulationTimer != null) return@makeButton
+            addButton(card, makeButton(
+                if (active) "DESACTIVAR VPN ACTUALIZADA"
+                else "ACTUALIZAR VPN",
+                if (active) green else blueButton
+            ) {
+                if (vpnSimulationTimer != null) return@makeButton
 
-                    if (prefs.getBoolean("track_active", false)) {
-                        prefs.edit()
-                            .putBoolean("track_active", false)
-                            .apply()
-                        showHome()
-                        toast("VPN desconectada.")
-                    } else {
-                        showVpnSimulationOverlay()
-                    }
+                if (prefs.getBoolean("track_active", false)) {
+                    prefs.edit().putBoolean("track_active", false).apply()
+                    showHome()
+                    toast("VPN desconectada.")
+                } else {
+                    showVpnSimulationOverlay()
                 }
-            )
+            })
         }
     }
 
@@ -925,7 +866,8 @@ class MainActivity : Activity() {
         card.addView(label("VPN ACTUALIZADA", 14f, green, true))
         card.addView(label("◈", 54f, cyan, true))
 
-        val lock = card.getChildAt(2)
+        // CORREGIDO: lock es TextView
+        val lock = card.getChildAt(2) as TextView
 
         val status = label("INICIANDO CONEXIÓN...", 16f, Color.WHITE, true)
         card.addView(status)
@@ -1102,12 +1044,8 @@ class MainActivity : Activity() {
         }
 
         overlay.addView(label("DRAGÓN ZETA", 24f, cyan, true))
-        overlay.addView(
-            label("CYBER SECURITY TERMINAL", 13f, green, true)
-        )
-        overlay.addView(
-            label("NETWORK ANALYSIS • SYSTEM SCAN", 10f, Color.LTGRAY)
-        )
+        overlay.addView(label("CYBER SECURITY TERMINAL", 13f, green, true))
+        overlay.addView(label("NETWORK ANALYSIS • SYSTEM SCAN", 10f, Color.LTGRAY))
 
         val codeView = TextView(this).apply {
             textSize = 12f
@@ -1141,8 +1079,7 @@ class MainActivity : Activity() {
             max = 100
             this.progress = 0
             progressTintList = ColorStateList.valueOf(green)
-            progressBackgroundTintList =
-                ColorStateList.valueOf(Color.DKGRAY)
+            progressBackgroundTintList = ColorStateList.valueOf(Color.DKGRAY)
         }
 
         overlay.addView(
@@ -1206,9 +1143,7 @@ class MainActivity : Activity() {
                     .toInt()
                     .coerceAtMost(codeLines.size)
 
-                codeView.text = codeLines
-                    .take(visibleLines)
-                    .joinToString("\n")
+                codeView.text = codeLines.take(visibleLines).joinToString("\n")
 
                 status.text = when {
                     percent < 25 -> "INICIANDO SISTEMA..."
@@ -1223,9 +1158,7 @@ class MainActivity : Activity() {
                 progress.progress = 100
                 codeView.text = codeLines.joinToString("\n")
 
-                prefs.edit()
-                    .putBoolean("spy_active", true)
-                    .apply()
+                prefs.edit().putBoolean("spy_active", true).apply()
 
                 status.text = "RED SEGURA\nFUNCIÓN ACTIVADA"
                 status.setTextColor(green)
@@ -1262,17 +1195,10 @@ class MainActivity : Activity() {
         )
 
         card.addView(
-            label(
-                "Sistema visual de protección de WhatsApp",
-                12f,
-                Color.LTGRAY
-            )
+            label("Sistema visual de protección de WhatsApp", 12f, Color.LTGRAY)
         )
 
-        val active = prefs.getBoolean(
-            "whatsapp_protection_active",
-            false
-        )
+        val active = prefs.getBoolean("whatsapp_protection_active", false)
 
         val shield = label(
             "◈",
@@ -1309,11 +1235,8 @@ class MainActivity : Activity() {
         ).apply {
             max = 100
             this.progress = if (active) 100 else 0
-            progressTintList = ColorStateList.valueOf(
-                if (active) green else cyan
-            )
-            progressBackgroundTintList =
-                ColorStateList.valueOf(Color.rgb(35, 48, 65))
+            progressTintList = ColorStateList.valueOf(if (active) green else cyan)
+            progressBackgroundTintList = ColorStateList.valueOf(Color.rgb(35, 48, 65))
         }
 
         card.addView(
@@ -1355,8 +1278,7 @@ class MainActivity : Activity() {
                 status.setTextColor(cyan)
                 detail.text = "Presiona el botón para comenzar"
                 progress.progress = 0
-                progress.progressTintList =
-                    ColorStateList.valueOf(cyan)
+                progress.progressTintList = ColorStateList.valueOf(cyan)
 
                 button.text = "ACTIVAR ANTI-HACK WSP"
                 button.background = GradientDrawable().apply {
@@ -1374,8 +1296,7 @@ class MainActivity : Activity() {
                 shield.setTextColor(cyan)
 
                 progress.progress = 0
-                progress.progressTintList =
-                    ColorStateList.valueOf(cyan)
+                progress.progressTintList = ColorStateList.valueOf(cyan)
 
                 whatsappScanAnimator = ObjectAnimator.ofFloat(
                     shield,
@@ -1394,8 +1315,7 @@ class MainActivity : Activity() {
 
                         override fun onTick(millisUntilFinished: Long) {
                             val percent =
-                                ((5000L - millisUntilFinished) * 100 / 5000)
-                                    .toInt()
+                                ((5000L - millisUntilFinished) * 100 / 5000).toInt()
 
                             progress.progress = percent
                             status.text = "REVISANDO CUENTA..."
@@ -1410,18 +1330,14 @@ class MainActivity : Activity() {
                             shield.rotation = 0f
                             shield.setTextColor(green)
                             progress.progress = 100
-                            progress.progressTintList =
-                                ColorStateList.valueOf(green)
+                            progress.progressTintList = ColorStateList.valueOf(green)
 
                             status.text = "REVISIÓN VISUAL COMPLETADA"
                             status.setTextColor(green)
                             detail.text = "PROCESO FINALIZADO"
 
                             prefs.edit()
-                                .putBoolean(
-                                    "whatsapp_protection_active",
-                                    true
-                                )
+                                .putBoolean("whatsapp_protection_active", true)
                                 .apply()
 
                             button.text = "ANTI-HACK WSP ACTIVADO"
