@@ -14,6 +14,7 @@ import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.view.animation.LinearInterpolator
 import android.widget.*
 import android.text.InputType
@@ -57,6 +58,12 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Mantener visibles la hora, batería, señal y navegación
+        window.statusBarColor = bg
+        window.navigationBarColor = bg
+        window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+
         showLogin()
     }
 
@@ -65,8 +72,9 @@ class MainActivity : Activity() {
         if (loggedIn) showHome()
     }
 
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
+    }
 
     private fun panel(
         color: Int,
@@ -78,7 +86,7 @@ class MainActivity : Activity() {
                 else panelColor
             )
             setStroke(dp(2), color)
-            cornerRadius = dp(13).toFloat()
+            cornerRadius = dp(11).toFloat()
         }
     }
 
@@ -99,7 +107,7 @@ class MainActivity : Activity() {
                     Typeface.BOLD_ITALIC
                 )
             }
-            setPadding(dp(6), dp(5), dp(6), dp(5))
+            setPadding(dp(4), dp(3), dp(4), dp(3))
         }
     }
 
@@ -111,18 +119,21 @@ class MainActivity : Activity() {
         return Button(this).apply {
             this.text = text
             setTextColor(Color.WHITE)
-            textSize = 13f
+            textSize = 12f
             typeface = Typeface.create(
                 "sans-serif-condensed",
                 Typeface.BOLD_ITALIC
             )
             isAllCaps = false
+            minHeight = 0
+            minimumHeight = 0
             background = GradientDrawable().apply {
                 setColor(color)
-                setStroke(dp(2), Color.WHITE)
-                cornerRadius = dp(14).toFloat()
+                setStroke(dp(1), Color.WHITE)
+                cornerRadius = dp(11).toFloat()
             }
-            elevation = dp(5).toFloat()
+            elevation = dp(3).toFloat()
+            setPadding(dp(4), 0, dp(4), 0)
             setOnClickListener { action() }
         }
     }
@@ -132,9 +143,9 @@ class MainActivity : Activity() {
             child,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(49)
+                dp(43)
             ).apply {
-                setMargins(dp(4), dp(5), dp(4), dp(5))
+                setMargins(dp(3), dp(4), dp(3), dp(4))
             }
         )
     }
@@ -153,10 +164,10 @@ class MainActivity : Activity() {
                 button,
                 LinearLayout.LayoutParams(
                     0,
-                    dp(54),
+                    dp(43),
                     1f
                 ).apply {
-                    setMargins(dp(3), dp(5), dp(3), dp(5))
+                    setMargins(dp(3), dp(3), dp(3), dp(3))
                 }
             )
         }
@@ -174,7 +185,7 @@ class MainActivity : Activity() {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            setPadding(dp(13), dp(9), dp(13), dp(20))
+            setPadding(dp(11), dp(4), dp(11), dp(12))
             setBackgroundColor(Color.TRANSPARENT)
         }
     }
@@ -185,9 +196,10 @@ class MainActivity : Activity() {
         watermark: Boolean = false
     ) {
         val scroll = ScrollView(this).apply {
-            isFillViewport = true
+            isFillViewport = false
             clipToPadding = false
             setBackgroundColor(Color.TRANSPARENT)
+            clipChildren = false
         }
 
         scroll.addView(
@@ -206,8 +218,8 @@ class MainActivity : Activity() {
             val logo = ImageView(this).apply {
                 setImageResource(R.drawable.dragon_zeta_logo)
                 scaleType = ImageView.ScaleType.FIT_CENTER
-                alpha = 0.32f
-                setPadding(dp(5), dp(100), dp(5), dp(100))
+                alpha = 0.25f
+                setPadding(dp(12), dp(80), dp(12), dp(80))
                 importantForAccessibility =
                     View.IMPORTANT_FOR_ACCESSIBILITY_NO
             }
@@ -233,7 +245,7 @@ class MainActivity : Activity() {
         setContentView(frame)
     }
 
-    // TARJETAS
+    // TARJETAS COMPACTAS
     private fun createCard(
         root: LinearLayout,
         title: String,
@@ -241,9 +253,9 @@ class MainActivity : Activity() {
     ): LinearLayout {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(10), dp(9), dp(10), dp(9))
+            setPadding(dp(8), dp(6), dp(8), dp(6))
             background = panel(color, true)
-            elevation = dp(4).toFloat()
+            elevation = dp(2).toFloat()
         }
 
         root.addView(
@@ -252,11 +264,11 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(0, dp(6), 0, dp(6))
+                setMargins(0, dp(4), 0, dp(4))
             }
         )
 
-        val heading = label(title, 17f, color, true)
+        val heading = label(title, 15f, color, true)
         heading.gravity = Gravity.CENTER_VERTICAL
         card.addView(heading)
 
@@ -268,7 +280,7 @@ class MainActivity : Activity() {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(3), dp(4), dp(3), dp(8))
+            setPadding(dp(2), dp(1), dp(2), dp(5))
         }
 
         val logo = ImageView(this).apply {
@@ -278,37 +290,33 @@ class MainActivity : Activity() {
 
         header.addView(
             logo,
-            LinearLayout.LayoutParams(dp(66), dp(58))
+            LinearLayout.LayoutParams(dp(48), dp(43))
         )
 
         header.addView(
-            label("DRAGÓN ZETA", 22f, cyan, true),
-            LinearLayout.LayoutParams(0, dp(55), 1f)
+            label("DRAGÓN ZETA", 19f, cyan, true),
+            LinearLayout.LayoutParams(0, dp(43), 1f)
         )
 
-        val paid = label("PAGADO", 17f, Color.BLACK, true)
+        val paid = label("PAGADO", 13f, Color.BLACK, true)
         paid.background = GradientDrawable().apply {
             setColor(green)
-            setStroke(dp(2), Color.WHITE)
-            cornerRadius = dp(30).toFloat()
+            setStroke(dp(1), Color.WHITE)
+            cornerRadius = dp(25).toFloat()
         }
 
         header.addView(
             paid,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                dp(43)
+                dp(34)
             )
         )
 
         root.addView(header)
 
-        val line = View(this).apply {
-            setBackgroundColor(cyan)
-        }
-
         root.addView(
-            line,
+            View(this).apply { setBackgroundColor(cyan) },
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dp(2)
@@ -320,8 +328,8 @@ class MainActivity : Activity() {
     private fun showLogin() {
         val root = createRoot()
 
-        root.addView(label("🐉 DRAGÓN ZETA", 28f, cyan, true))
-        root.addView(label("CENTRO DE SEGURIDAD PERSONAL", 13f, green, true))
+        root.addView(label("🐉 DRAGÓN ZETA", 25f, cyan, true))
+        root.addView(label("CENTRO DE SEGURIDAD PERSONAL", 12f, green, true))
 
         val image = ImageView(this)
         val imageId = resources.getIdentifier(
@@ -337,7 +345,7 @@ class MainActivity : Activity() {
                 image,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    dp(190)
+                    dp(155)
                 )
             )
         }
@@ -350,7 +358,7 @@ class MainActivity : Activity() {
             setTextColor(Color.WHITE)
             isSingleLine = true
             background = panel(cyan)
-            setPadding(dp(12), dp(8), dp(12), dp(8))
+            setPadding(dp(10), dp(5), dp(10), dp(5))
         }
 
         val password = EditText(this).apply {
@@ -361,7 +369,7 @@ class MainActivity : Activity() {
                 InputType.TYPE_TEXT_VARIATION_PASSWORD
             isSingleLine = true
             background = panel(cyan)
-            setPadding(dp(12), dp(8), dp(12), dp(8))
+            setPadding(dp(10), dp(5), dp(10), dp(5))
         }
 
         card.addView(username)
@@ -378,7 +386,7 @@ class MainActivity : Activity() {
             }
         })
 
-        root.addView(label("SISTEMA DE PROTECCIÓN", 11f, Color.LTGRAY))
+        root.addView(label("SISTEMA DE PROTECCIÓN", 10f, Color.LTGRAY))
         showScreen(root)
     }
 
@@ -392,9 +400,9 @@ class MainActivity : Activity() {
         val root = createRoot()
         addHeader(root)
 
-        root.addView(label("PANEL DE CONTROL", 27f, Color.WHITE, true))
+        root.addView(label("PANEL DE CONTROL", 23f, Color.WHITE, true))
         root.addView(
-            label("CENTRO DE SEGURIDAD PERSONAL", 15f, cyan, true)
+            label("CENTRO DE SEGURIDAD PERSONAL", 12f, cyan, true)
         )
 
         // PERFIL
@@ -405,42 +413,40 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
         }
 
-        val avatar = label("●", 49f, cyan, true)
+        val avatar = label("●", 39f, cyan, true)
         profileRow.addView(
             avatar,
-            LinearLayout.LayoutParams(dp(85), dp(85))
+            LinearLayout.LayoutParams(dp(65), dp(60))
         )
 
         val profileInfo = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
         }
 
+        profileInfo.addView(label("ZEPROXX", 21f, Color.WHITE, true))
         profileInfo.addView(
-            label("ZEPROXX", 25f, Color.WHITE, true)
-        )
-        profileInfo.addView(
-            label("USUARIO AUTORIZADO", 16f, green, true)
+            label("USUARIO AUTORIZADO", 13f, green, true)
         )
 
         profileRow.addView(
             profileInfo,
-            LinearLayout.LayoutParams(0, dp(85), 1f)
+            LinearLayout.LayoutParams(0, dp(60), 1f)
         )
 
         profile.addView(profileRow)
         profile.addView(
-            label("ESTADO: SISTEMA DISPONIBLE", 15f, Color.WHITE, true)
+            label("ESTADO: SISTEMA DISPONIBLE", 13f, Color.WHITE, true)
         )
 
         // PROTECCIÓN
         val protection = createCard(root, "🛡️ PROTECCIÓN", green)
         protection.addView(
-            label("DRAGÓN ZETA ESTÁ LISTO", 21f, green, true)
+            label("DRAGÓN ZETA ESTÁ LISTO", 18f, green, true)
         )
         protection.addView(
             label(
                 "Controla tus opciones desde este panel",
-                13f,
+                12f,
                 Color.WHITE
             )
         )
@@ -450,12 +456,12 @@ class MainActivity : Activity() {
         addOption(root, "🌐 ANTI-RASTREO", "track")
         addWhatsAppProtection(root)
 
-        addButton(root, makeButton("➜   CERRAR SESIÓN", amber) {
+        addButton(root, makeButton("➜  CERRAR SESIÓN", amber) {
             logout()
         })
 
         root.addView(
-            label("🐉 DRAGÓN ZETA • VERSIÓN 1.0", 13f, cyan, true)
+            label("🐉 DRAGÓN ZETA • VERSIÓN 1.0", 11f, cyan, true)
         )
 
         showScreen(root, watermark = true)
@@ -466,23 +472,17 @@ class MainActivity : Activity() {
         val active = prefs.getBoolean("sos_configured", false)
         val number = prefs.getString("sos_phone", "") ?: ""
 
-        val card = createCard(
-            root,
-            "🆘 BOTÓN SOS",
-            if (active) red else red
-        )
+        val card = createCard(root, "🆘 BOTÓN SOS", red)
 
         if (active) {
+            card.addView(label("✓ SOS ACTIVADO", 17f, green, true))
             card.addView(
-                label("✓ SOS ACTIVADO", 20f, green, true)
-            )
-            card.addView(
-                label("Número de emergencia: $number", 14f, Color.WHITE)
+                label("Número de emergencia: $number", 12f, Color.WHITE)
             )
             card.addView(
                 label(
                     "Dos pulsaciones de VOLUMEN ARRIBA activan la alerta.",
-                    12f,
+                    11f,
                     Color.LTGRAY
                 )
             )
@@ -518,25 +518,26 @@ class MainActivity : Activity() {
 
         } else {
             card.addView(
-                label("Configura tu número de emergencia", 14f, Color.WHITE)
+                label("Configura tu número de emergencia", 12f, Color.WHITE)
             )
 
             val phone = EditText(this).apply {
                 hint = "+51 999 999 999"
                 setHintTextColor(Color.LTGRAY)
                 setTextColor(Color.WHITE)
+                textSize = 17f
                 inputType = InputType.TYPE_CLASS_PHONE
                 isSingleLine = true
                 setText(number)
                 background = panel(cyan)
-                setPadding(dp(12), dp(8), dp(12), dp(8))
+                setPadding(dp(10), dp(5), dp(10), dp(5))
             }
 
             card.addView(
                 phone,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    dp(52)
+                    dp(44)
                 )
             )
 
@@ -650,15 +651,14 @@ class MainActivity : Activity() {
                 label(
                     if (active) "✓ RED SEGURA • FUNCIÓN ACTIVADA"
                     else "Sistema de análisis visual de red",
-                    13f,
+                    12f,
                     if (active) green else Color.WHITE,
                     true
                 )
             )
 
             val action = makeButton(
-                if (active) "DESACTIVAR"
-                else "ACTIVAR",
+                if (active) "DESACTIVAR" else "ACTIVAR",
                 if (active) green else blue
             ) {
                 if (prefs.getBoolean("spy_active", false)) {
@@ -670,10 +670,10 @@ class MainActivity : Activity() {
                 }
             }
 
-            row.addView(info, LinearLayout.LayoutParams(0, dp(65), 1f))
+            row.addView(info, LinearLayout.LayoutParams(0, dp(47), 1f))
             row.addView(
                 action,
-                LinearLayout.LayoutParams(dp(125), dp(48))
+                LinearLayout.LayoutParams(dp(112), dp(40))
             )
 
         } else {
@@ -681,15 +681,14 @@ class MainActivity : Activity() {
                 label(
                     if (active) "✓ VPN ACTUALIZADA"
                     else "Cambio visual de servidor VPN",
-                    13f,
+                    12f,
                     if (active) green else Color.WHITE,
                     true
                 )
             )
 
             val action = makeButton(
-                if (active) "DESCONECTAR"
-                else "CONECTAR VPN",
+                if (active) "DESCONECTAR" else "CONECTAR VPN",
                 blue
             ) {
                 if (vpnSimulationTimer != null) return@makeButton
@@ -703,10 +702,10 @@ class MainActivity : Activity() {
                 }
             }
 
-            row.addView(info, LinearLayout.LayoutParams(0, dp(65), 1f))
+            row.addView(info, LinearLayout.LayoutParams(0, dp(47), 1f))
             row.addView(
                 action,
-                LinearLayout.LayoutParams(dp(135), dp(48))
+                LinearLayout.LayoutParams(dp(120), dp(40))
             )
         }
 
@@ -727,19 +726,19 @@ class MainActivity : Activity() {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(20), dp(22), dp(20), dp(20))
+            setPadding(dp(16), dp(16), dp(16), dp(16))
             background = panel(cyan)
-            elevation = dp(18).toFloat()
+            elevation = dp(15).toFloat()
         }
 
-        card.addView(label("🐉 DRAGÓN ZETA", 24f, cyan, true))
-        card.addView(label("SIMULACIÓN DE CONEXIÓN VPN", 15f, green, true))
-        card.addView(label("◈", 54f, cyan, true))
+        card.addView(label("🐉 DRAGÓN ZETA", 22f, cyan, true))
+        card.addView(label("SIMULACIÓN DE CONEXIÓN VPN", 13f, green, true))
+        card.addView(label("◈", 48f, cyan, true))
 
-        val status = label("INICIANDO CONEXIÓN...", 16f, Color.WHITE, true)
+        val status = label("INICIANDO CONEXIÓN...", 14f, Color.WHITE, true)
         card.addView(status)
 
-        val server = label("Servidor: seleccionando ubicación", 12f, Color.LTGRAY)
+        val server = label("Servidor: seleccionando ubicación", 11f, Color.LTGRAY)
         card.addView(server)
 
         val progress = ProgressBar(
@@ -748,7 +747,7 @@ class MainActivity : Activity() {
             android.R.attr.progressBarStyleHorizontal
         ).apply {
             max = 100
-            progress = 0
+            this.progress = 0
             progressTintList = ColorStateList.valueOf(cyan)
             progressBackgroundTintList = ColorStateList.valueOf(Color.DKGRAY)
         }
@@ -757,17 +756,13 @@ class MainActivity : Activity() {
             progress,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(10)
+                dp(9)
             ).apply {
-                setMargins(dp(4), dp(15), dp(4), dp(12))
+                setMargins(dp(4), dp(12), dp(4), dp(10))
             }
         )
 
-        val log = label(
-            "Preparando simulación...",
-            11f,
-            green
-        )
+        val log = label("Preparando simulación...", 10f, green)
         card.addView(log)
 
         val close = makeButton("CANCELAR", red) {
@@ -782,7 +777,7 @@ class MainActivity : Activity() {
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.CENTER
             ).apply {
-                setMargins(dp(22), dp(18), dp(22), dp(18))
+                setMargins(dp(20), dp(15), dp(20), dp(15))
             }
         )
 
@@ -828,7 +823,7 @@ class MainActivity : Activity() {
                 close.text = "FINALIZAR"
                 close.background = GradientDrawable().apply {
                     setColor(green)
-                    cornerRadius = dp(12).toFloat()
+                    cornerRadius = dp(11).toFloat()
                 }
 
                 close.setOnClickListener {
@@ -862,21 +857,21 @@ class MainActivity : Activity() {
         val overlay = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(20), dp(25), dp(20), dp(25))
+            setPadding(dp(16), dp(18), dp(16), dp(18))
             setBackgroundColor(Color.argb(235, 1, 7, 19))
         }
 
-        overlay.addView(label("🐉 DRAGÓN ZETA", 26f, cyan, true))
-        overlay.addView(label("CYBER SECURITY TERMINAL", 14f, green, true))
-        overlay.addView(label("ANÁLISIS VISUAL DEL SISTEMA", 11f, Color.LTGRAY))
+        overlay.addView(label("🐉 DRAGÓN ZETA", 23f, cyan, true))
+        overlay.addView(label("CYBER SECURITY TERMINAL", 13f, green, true))
+        overlay.addView(label("ANÁLISIS VISUAL DEL SISTEMA", 10f, Color.LTGRAY))
 
         val codeView = TextView(this).apply {
-            textSize = 12f
+            textSize = 11f
             typeface = Typeface.MONOSPACE
             setTextColor(green)
             gravity = Gravity.START
-            setPadding(dp(12), dp(12), dp(12), dp(12))
-            setLineSpacing(dp(4).toFloat(), 1f)
+            setPadding(dp(10), dp(10), dp(10), dp(10))
+            setLineSpacing(dp(3).toFloat(), 1f)
             background = panel(green, true)
         }
 
@@ -887,11 +882,11 @@ class MainActivity : Activity() {
                 0,
                 1f
             ).apply {
-                setMargins(0, dp(18), 0, dp(15))
+                setMargins(0, dp(12), 0, dp(12))
             }
         )
 
-        val status = label("INICIANDO ANÁLISIS...", 17f, cyan, true)
+        val status = label("INICIANDO ANÁLISIS...", 15f, cyan, true)
         overlay.addView(status)
 
         val progress = ProgressBar(
@@ -900,7 +895,7 @@ class MainActivity : Activity() {
             android.R.attr.progressBarStyleHorizontal
         ).apply {
             max = 100
-            progress = 0
+            this.progress = 0
             progressTintList = ColorStateList.valueOf(green)
             progressBackgroundTintList = ColorStateList.valueOf(Color.DKGRAY)
         }
@@ -909,9 +904,9 @@ class MainActivity : Activity() {
             progress,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(12)
+                dp(10)
             ).apply {
-                setMargins(dp(10), dp(12), dp(10), dp(15))
+                setMargins(dp(8), dp(10), dp(8), dp(12))
             }
         )
 
@@ -1001,21 +996,17 @@ class MainActivity : Activity() {
             false
         )
 
-        val card = createCard(
-            root,
-            "🛡️ ANTI-HACK WSP",
-            if (active) green else green
-        )
+        val card = createCard(root, "🛡️ ANTI-HACK WSP", green)
 
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
 
-        val icon = label("◉", 48f, green, true)
+        val icon = label("◉", 40f, green, true)
         row.addView(
             icon,
-            LinearLayout.LayoutParams(dp(75), dp(75))
+            LinearLayout.LayoutParams(dp(60), dp(60))
         )
 
         val info = LinearLayout(this).apply {
@@ -1025,7 +1016,7 @@ class MainActivity : Activity() {
         info.addView(
             label(
                 "Sistema visual de protección de WhatsApp",
-                12f,
+                11f,
                 Color.WHITE
             )
         )
@@ -1033,7 +1024,7 @@ class MainActivity : Activity() {
         val status = label(
             if (active) "✓ REVISIÓN VISUAL COMPLETADA"
             else "SISTEMA EN ESPERA",
-            13f,
+            12f,
             if (active) green else cyan,
             true
         )
@@ -1041,14 +1032,14 @@ class MainActivity : Activity() {
 
         row.addView(
             info,
-            LinearLayout.LayoutParams(0, dp(75), 1f)
+            LinearLayout.LayoutParams(0, dp(60), 1f)
         )
         card.addView(row)
 
         val detail = label(
             if (active) "Proceso visual finalizado"
             else "Presiona para comenzar",
-            11f,
+            10f,
             Color.LTGRAY
         )
         card.addView(detail)
@@ -1059,7 +1050,7 @@ class MainActivity : Activity() {
             android.R.attr.progressBarStyleHorizontal
         ).apply {
             max = 100
-            progress = if (active) 100 else 0
+            this.progress = if (active) 100 else 0
             progressTintList = ColorStateList.valueOf(
                 if (active) green else cyan
             )
@@ -1071,16 +1062,16 @@ class MainActivity : Activity() {
             progress,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(9)
+                dp(8)
             ).apply {
-                setMargins(dp(8), dp(8), dp(8), dp(8))
+                setMargins(dp(6), dp(7), dp(6), dp(7))
             }
         )
 
         val button = makeButton(
             if (active) "ANTI-HACK WSP ACTIVADO"
             else "ACTIVAR ANTI-HACK WSP",
-            if (active) green else green
+            green
         ) {}
 
         addButton(card, button)
@@ -1106,11 +1097,8 @@ class MainActivity : Activity() {
                 progress.progress = 0
                 progress.progressTintList =
                     ColorStateList.valueOf(cyan)
+
                 button.text = "ACTIVAR ANTI-HACK WSP"
-                button.background = GradientDrawable().apply {
-                    setColor(green)
-                    cornerRadius = dp(12).toFloat()
-                }
                 toast("ANTI-HACK WSP desactivado.")
             } else {
                 button.isEnabled = false
