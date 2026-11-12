@@ -10,10 +10,7 @@ import android.widget.Toast
 class SosVolumeService : AccessibilityService() {
 
     private var upPressCount = 0
-    private var downPressCount = 0
-
     private var lastUpPress = 0L
-    private var lastDownPress = 0L
 
     private val pressInterval = 1000L
     private var lastActivation = 0L
@@ -35,17 +32,10 @@ class SosVolumeService : AccessibilityService() {
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
 
-        val isVolumeUp =
-            event.keyCode == KeyEvent.KEYCODE_VOLUME_UP
-
-        val isVolumeDown =
-            event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
-
-        if (!isVolumeUp && !isVolumeDown) {
+        if (event.keyCode != KeyEvent.KEYCODE_VOLUME_UP) {
             return false
         }
 
-        // Permitir el comportamiento normal del volumen.
         if (event.action != KeyEvent.ACTION_DOWN ||
             event.repeatCount > 0
         ) {
@@ -54,72 +44,39 @@ class SosVolumeService : AccessibilityService() {
 
         val now = SystemClock.elapsedRealtime()
 
-        // DOS PULSACIONES DE VOLUMEN ARRIBA = SOS
-        if (isVolumeUp) {
-
-            downPressCount = 0
-            lastDownPress = 0L
-
-            if (now - lastUpPress > pressInterval) {
-                upPressCount = 0
-            }
-
-            upPressCount++
-            lastUpPress = now
-
-            if (upPressCount >= 2) {
-
-                upPressCount = 0
-                lastUpPress = 0L
-
-                if (now - lastActivation > 1500L) {
-                    lastActivation = now
-
-                    val number = getSharedPreferences(
-                        "dragon_zeta",
-                        MODE_PRIVATE
-                    ).getString("sos_phone", "") ?: ""
-
-                    if (number.isNotBlank()) {
-                        SosEmergency.start(this, number)
-                    } else {
-                        Toast.makeText(
-                            this,
-                            "Primero configura tu número SOS",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            }
+        if (now - lastUpPress > pressInterval) {
+            upPressCount = 0
         }
 
-        // DOS PULSACIONES DE VOLUMEN ABAJO = SEGUIMIENTO GPS
-        if (isVolumeDown) {
+        upPressCount++
+        lastUpPress = now
+
+        if (upPressCount >= 2) {
 
             upPressCount = 0
             lastUpPress = 0L
 
-            if (now - lastDownPress > pressInterval) {
-                downPressCount = 0
-            }
+            if (now - lastActivation > 1500L) {
+                lastActivation = now
 
-            downPressCount++
-            lastDownPress = now
+                val number = getSharedPreferences(
+                    "dragon_zeta",
+                    MODE_PRIVATE
+                ).getString("sos_phone", "") ?: ""
 
-            if (downPressCount >= 2) {
-
-                downPressCount = 0
-                lastDownPress = 0L
-
-                if (now - lastActivation > 1500L) {
-                    lastActivation = now
-
-                    SosTrackingService.startTracking(this)
+                if (number.isNotBlank()) {
+                    SosEmergency.start(this, number)
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Primero configura tu número SOS",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
 
-        // No bloquear las teclas físicas de volumen.
+        // Permite que el volumen siga funcionando normalmente.
         return false
     }
 
