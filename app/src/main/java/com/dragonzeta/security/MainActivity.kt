@@ -1,3 +1,4 @@
+
 package com.dragonzeta.security
 
 import android.Manifest
@@ -70,9 +71,18 @@ class MainActivity : Activity() {
         return (value * resources.displayMetrics.density).toInt()
     }
 
-    private fun panel(color: Int): GradientDrawable {
+    private fun panel(
+        color: Int,
+        translucent: Boolean = false
+    ): GradientDrawable {
         return GradientDrawable().apply {
-            setColor(panelColor)
+            setColor(
+                if (translucent) {
+                    Color.argb(218, 10, 22, 43)
+                } else {
+                    panelColor
+                }
+            )
             setStroke(dp(1), color)
             cornerRadius = dp(15).toFloat()
         }
@@ -133,9 +143,19 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun showScreen(root: LinearLayout) {
+    // PANTALLA CON MARCA DE AGUA
+    private fun showScreen(
+        root: LinearLayout,
+        watermark: Boolean = false
+    ) {
         val scroll = ScrollView(this)
-        scroll.setBackgroundColor(bg)
+
+        if (watermark) {
+            root.setBackgroundColor(Color.TRANSPARENT)
+            scroll.setBackgroundColor(Color.TRANSPARENT)
+        } else {
+            scroll.setBackgroundColor(bg)
+        }
 
         scroll.addView(
             root,
@@ -148,6 +168,32 @@ class MainActivity : Activity() {
         val frame = FrameLayout(this)
         frame.setBackgroundColor(bg)
 
+        // LOGOTIPO COMO MARCA DE AGUA
+        if (watermark) {
+            val logo = ImageView(this).apply {
+                setImageResource(R.drawable.dragon_zeta_logo)
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                alpha = 0.16f
+                setPadding(
+                    dp(25),
+                    dp(45),
+                    dp(25),
+                    dp(45)
+                )
+                importantForAccessibility =
+                    View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+
+            frame.addView(
+                logo,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+
+        // CONTENIDO POR ENCIMA DEL LOGOTIPO
         frame.addView(
             scroll,
             FrameLayout.LayoutParams(
@@ -168,7 +214,7 @@ class MainActivity : Activity() {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(12), dp(12), dp(12))
-            background = panel(color)
+            background = panel(color, true)
         }
 
         root.addView(
@@ -319,7 +365,8 @@ class MainActivity : Activity() {
             label("🐉 DRAGÓN ZETA • VERSIÓN 1.0", 11f, Color.GRAY)
         )
 
-        showScreen(root)
+        // MARCA DE AGUA SOLAMENTE EN LA PANTALLA DE OPCIONES
+        showScreen(root, watermark = true)
     }
 
     // SISTEMA SOS
@@ -502,7 +549,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // ANTI-CHUPONEO
+    // ANTI-CHUPONEO Y ANTI-RASTREO
     private fun addOption(
         root: LinearLayout,
         title: String,
