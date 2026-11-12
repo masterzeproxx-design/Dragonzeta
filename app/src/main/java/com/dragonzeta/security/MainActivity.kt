@@ -635,124 +635,134 @@ class MainActivity : Activity() {
         showScreen(root)
     }
 
-    // VALIDACIÓN FIREBASE CON MENSAJES DE ERROR DETALLADOS
+    // VALIDACIÓN FIREBASE CON REACTIVACIÓN DE CONEXIÓN
     private fun validateFirebaseAccess(email: String, uid: String) {
 
-        db.collection("usuarios")
-            .document(uid)
-            .get()
-            .addOnSuccessListener { userDoc ->
+        // Intentar habilitar la conexión de Firestore antes de consultar.
+        db.enableNetwork()
+            .addOnSuccessListener {
 
-                if (!userDoc.exists()) {
-                    rejectFirebaseAccess(
-                        "No existe el perfil para UID: $uid"
-                    )
-                    return@addOnSuccessListener
-                }
-
-                val active = userDoc.getBoolean("activo") == true
-                val role = userDoc.getString("rol")?.trim() ?: "USUARIO"
-                val profileEmail = userDoc.getString("correo")?.trim() ?: ""
-
-                if (!active) {
-                    rejectFirebaseAccess("Tu cuenta está desactivada.")
-                    return@addOnSuccessListener
-                }
-
-                if (email.equals(adminEmail, ignoreCase = true)) {
-
-                    if (!role.equals("ADMIN", ignoreCase = true)) {
-                        rejectFirebaseAccess(
-                            "El rol encontrado es: $role"
-                        )
-                        return@addOnSuccessListener
-                    }
-
-                    if (!profileEmail.equals(email, ignoreCase = true)) {
-                        rejectFirebaseAccess(
-                            "El correo del perfil no coincide: $profileEmail"
-                        )
-                        return@addOnSuccessListener
-                    }
-
-                    currentEmail = email
-                    currentRole = "ADMIN"
-                    licenseExpiration = "ACCESO PERMANENTE"
-                    licenseDaysRemaining = -1
-
-                    loggedIn = true
-                    loginInProgress = false
-
-                    showHome()
-                    toast("BIENVENIDO ADMINISTRADOR")
-                    return@addOnSuccessListener
-                }
-
-                db.collection("licenses")
+                db.collection("usuarios")
                     .document(uid)
                     .get()
-                    .addOnSuccessListener { licenseDoc ->
+                    .addOnSuccessListener { userDoc ->
 
-                        if (!licenseDoc.exists()) {
+                        if (!userDoc.exists()) {
                             rejectFirebaseAccess(
-                                "No tienes una licencia registrada."
+                                "No existe el perfil para UID: $uid"
                             )
                             return@addOnSuccessListener
                         }
 
-                        val licenseActive =
-                            licenseDoc.getBoolean("activo") == true
+                        val active = userDoc.getBoolean("activo") == true
+                        val role = userDoc.getString("rol")?.trim() ?: "USUARIO"
+                        val profileEmail = userDoc.getString("correo")?.trim() ?: ""
 
-                        val expiration =
-                            licenseDoc.getTimestamp("expiresAt")
-
-                        if (!licenseActive || expiration == null) {
-                            rejectFirebaseAccess(
-                                "Tu licencia no está activa o no tiene vencimiento."
-                            )
+                        if (!active) {
+                            rejectFirebaseAccess("Tu cuenta está desactivada.")
                             return@addOnSuccessListener
                         }
 
-                        val expirationDate = expiration.toDate()
-                        val remaining =
-                            expirationDate.time - System.currentTimeMillis()
+                        if (email.equals(adminEmail, ignoreCase = true)) {
 
-                        if (remaining <= 0L) {
-                            rejectFirebaseAccess(
-                                "Tu licencia de 365 días ha vencido."
-                            )
+                            if (!role.equals("ADMIN", ignoreCase = true)) {
+                                rejectFirebaseAccess(
+                                    "El rol encontrado es: $role"
+                                )
+                                return@addOnSuccessListener
+                            }
+
+                            if (!profileEmail.equals(email, ignoreCase = true)) {
+                                rejectFirebaseAccess(
+                                    "El correo del perfil no coincide: $profileEmail"
+                                )
+                                return@addOnSuccessListener
+                            }
+
+                            currentEmail = email
+                            currentRole = "ADMIN"
+                            licenseExpiration = "ACCESO PERMANENTE"
+                            licenseDaysRemaining = -1
+
+                            loggedIn = true
+                            loginInProgress = false
+
+                            showHome()
+                            toast("BIENVENIDO ADMINISTRADOR")
                             return@addOnSuccessListener
                         }
 
-                        licenseDaysRemaining =
-                            ((remaining + 86_399_999L) / 86_400_000L).toInt()
+                        db.collection("licenses")
+                            .document(uid)
+                            .get()
+                            .addOnSuccessListener { licenseDoc ->
 
-                        licenseExpiration = SimpleDateFormat(
-                            "dd/MM/yyyy",
-                            Locale.getDefault()
-                        ).format(expirationDate)
+                                if (!licenseDoc.exists()) {
+                                    rejectFirebaseAccess(
+                                        "No tienes una licencia registrada."
+                                    )
+                                    return@addOnSuccessListener
+                                }
 
-                        currentEmail = email
-                        currentRole = role
+                                val licenseActive =
+                                    licenseDoc.getBoolean("activo") == true
 
-                        loggedIn = true
-                        loginInProgress = false
+                                val expiration =
+                                    licenseDoc.getTimestamp("expiresAt")
 
-                        showHome()
+                                if (!licenseActive || expiration == null) {
+                                    rejectFirebaseAccess(
+                                        "Tu licencia no está activa o no tiene vencimiento."
+                                    )
+                                    return@addOnSuccessListener
+                                }
 
-                        toast(
-                            "LICENCIA ACTIVA: $licenseDaysRemaining días restantes."
-                        )
+                                val expirationDate = expiration.toDate()
+                                val remaining =
+                                    expirationDate.time - System.currentTimeMillis()
+
+                                if (remaining <= 0L) {
+                                    rejectFirebaseAccess(
+                                        "Tu licencia de 365 días ha vencido."
+                                    )
+                                    return@addOnSuccessListener
+                                }
+
+                                licenseDaysRemaining =
+                                    ((remaining + 86_399_999L) / 86_400_000L).toInt()
+
+                                licenseExpiration = SimpleDateFormat(
+                                    "dd/MM/yyyy",
+                                    Locale.getDefault()
+                                ).format(expirationDate)
+
+                                currentEmail = email
+                                currentRole = role
+
+                                loggedIn = true
+                                loginInProgress = false
+
+                                showHome()
+
+                                toast(
+                                    "LICENCIA ACTIVA: $licenseDaysRemaining días restantes."
+                                )
+                            }
+                            .addOnFailureListener { error ->
+                                rejectFirebaseAccess(
+                                    "ERROR AL LEER LICENCIA: ${error.javaClass.simpleName}: ${error.message}"
+                                )
+                            }
                     }
                     .addOnFailureListener { error ->
                         rejectFirebaseAccess(
-                            "ERROR AL LEER LICENCIA: ${error.message}"
+                            "ERROR FIRESTORE AL LEER PERFIL: ${error.javaClass.simpleName}: ${error.message}"
                         )
                     }
             }
             .addOnFailureListener { error ->
                 rejectFirebaseAccess(
-                    "ERROR FIRESTORE: ${error.message}"
+                    "NO SE PUDO ACTIVAR LA CONEXIÓN FIREBASE: ${error.javaClass.simpleName}: ${error.message}"
                 )
             }
     }
