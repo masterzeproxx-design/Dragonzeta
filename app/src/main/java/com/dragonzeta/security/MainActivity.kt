@@ -42,6 +42,9 @@ class MainActivity : Activity() {
     private var whatsappScanTimer: android.os.CountDownTimer? = null
     private var whatsappScanAnimator: ObjectAnimator? = null
 
+    private var vpnSimulationTimer: android.os.CountDownTimer? = null
+    private var vpnOverlayView: View? = null
+
     private var overlayTimer: android.os.CountDownTimer? = null
     private var overlayFrame: FrameLayout? = null
 
@@ -542,26 +545,220 @@ class MainActivity : Activity() {
                     }
                 }
             )
-        } else {
-            val switch = Switch(this).apply {
-                text = "Activar función"
-                textSize = 14f
-                setTextColor(Color.WHITE)
-                isChecked = active
-            }
-
-            switch.setOnCheckedChangeListener { _, checked ->
-                prefs.edit()
-                    .putBoolean("${key}_active", checked)
-                    .apply()
-
-                toast(
-                    if (checked) "Opción activada."
-                    else "Opción desactivada."
+        } else if (key == "track") {
+            card.addView(
+                label(
+                    if (active) "✓ VPN SIMULADA ACTIVADA"
+                    else "Cambia visualmente de servidor VPN",
+                    12f,
+                    if (active) green else Color.LTGRAY,
+                    active
                 )
+            )
+
+            addButton(
+                card,
+                makeButton(
+                    if (active) "DESACTIVAR VPN SIMULADA"
+                    else "CONECTAR A VPN",
+                    if (active) green else cyan
+                ) {
+                    if (vpnSimulationTimer != null) return@makeButton
+
+                    if (prefs.getBoolean("track_active", false)) {
+                        prefs.edit().putBoolean("track_active", false).apply()
+                        showHome()
+                        toast("VPN simulada desconectada.")
+                    } else {
+                        showVpnSimulationOverlay()
+                    }
+                }
+            )
+        }
+    }
+
+    // VENTANA TRANSLÚCIDA DE CONEXIÓN VPN (SIMULACIÓN VISUAL)
+    private fun showVpnSimulationOverlay() {
+        val frame = overlayFrame ?: return
+        if (vpnSimulationTimer != null) return
+
+        val overlay = FrameLayout(this).apply {
+            setBackgroundColor(Color.argb(178, 0, 5, 16))
+            isClickable = true
+            isFocusable = true
+        }
+
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(20), dp(22), dp(20), dp(20))
+            background = GradientDrawable().apply {
+                setColor(Color.argb(248, 8, 20, 39))
+                setStroke(dp(1), cyan)
+                cornerRadius = dp(22).toFloat()
+            }
+            elevation = dp(18).toFloat()
+        }
+
+        val heading = label("🐉 DRAGÓN ZETA", 22f, cyan, true)
+        card.addView(heading)
+        card.addView(label("TÚNEL VPN SEGURO", 14f, green, true))
+
+        val lock = label("◈", 54f, cyan, true)
+        card.addView(lock)
+
+        val status = label("INICIANDO CONEXIÓN...", 16f, Color.WHITE, true)
+        card.addView(status)
+
+        val server = label("Servidor: seleccionando ubicación", 12f, Color.LTGRAY)
+        card.addView(server)
+
+        val progress = ProgressBar(
+            this,
+            null,
+            android.R.attr.progressBarStyleHorizontal
+        ).apply {
+            max = 100
+            this.progress = 0
+            progressTintList = ColorStateList.valueOf(cyan)
+            progressBackgroundTintList = ColorStateList.valueOf(Color.DKGRAY)
+        }
+        card.addView(
+            progress,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(10)
+            ).apply { setMargins(dp(4), dp(15), dp(4), dp(12)) }
+        )
+
+        val ipPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+            background = GradientDrawable().apply {
+                setColor(Color.argb(190, 2, 12, 27))
+                setStroke(dp(1), Color.argb(150, 0, 220, 255))
+                cornerRadius = dp(12).toFloat()
+            }
+        }
+        val oldIp = label("IP ANTERIOR: —", 12f, Color.LTGRAY)
+        val newIp = label("NUEVA IP: conectando...", 12f, cyan, true)
+        ipPanel.addView(oldIp)
+        ipPanel.addView(newIp)
+        card.addView(ipPanel)
+
+        val log = TextView(this).apply {
+            text = "Preparando túnel cifrado..."
+            textSize = 10f
+            typeface = Typeface.MONOSPACE
+            setTextColor(green)
+            gravity = Gravity.START
+            setPadding(dp(8), dp(12), dp(8), dp(8))
+        }
+        card.addView(log)
+
+        card.addView(
+            label(
+                "Demostración visual: no cambia la IP real ni activa una VPN.",
+                10f,
+                Color.GRAY
+            )
+        )
+
+        val close = makeButton("CANCELAR", red) {
+            closeVpnSimulationOverlay(false)
+        }
+        card.addView(
+            close,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(48)
+            ).apply { setMargins(0, dp(10), 0, 0) }
+        )
+
+        val cardParams = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.CENTER
+        ).apply {
+            setMargins(dp(22), dp(18), dp(22), dp(18))
+        }
+        overlay.addView(card, cardParams)
+        frame.addView(
+            overlay,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+        vpnOverlayView = overlay
+
+        val messages = arrayOf(
+            "Buscando servidor disponible...",
+            "Negociando protocolo WireGuard...",
+            "Creando túnel seguro...",
+            "Verificando ruta de conexión...",
+            "Asignando dirección IP de demostración...",
+            "Finalizando conexión..."
+        )
+
+        vpnSimulationTimer = object : android.os.CountDownTimer(8000, 250) {
+            override fun onTick(millisUntilFinished: Long) {
+                val elapsed = 8000L - millisUntilFinished
+                val percent = (elapsed * 100 / 8000).toInt()
+                progress.progress = percent
+                status.text = when {
+                    percent < 20 -> "LOCALIZANDO SERVIDOR..."
+                    percent < 45 -> "NEGOCIANDO CONEXIÓN..."
+                    percent < 70 -> "CREANDO TÚNEL CIFRADO..."
+                    else -> "ASIGNANDO NUEVA RUTA..."
+                }
+                server.text = when {
+                    percent < 35 -> "Servidor: buscando mejor ubicación"
+                    percent < 70 -> "Servidor: Ámsterdam, Países Bajos"
+                    else -> "Servidor: Ámsterdam • conectado"
+                }
+                val index = ((percent / 18).coerceAtMost(messages.lastIndex))
+                log.text = messages.take(index + 1).joinToString("
+") { "› $it" }
+                lock.rotation = if (percent % 20 < 10) -8f else 8f
             }
 
-            card.addView(switch)
+            override fun onFinish() {
+                vpnSimulationTimer = null
+                progress.progress = 100
+                status.text = "✓ VPN SIMULADA ACTIVADA"
+                status.setTextColor(green)
+                server.text = "Servidor: Ámsterdam, Países Bajos"
+                oldIp.text = "IP ANTERIOR: 198.51.100.24"
+                newIp.text = "IP DE DEMOSTRACIÓN: 203.0.113.58"
+                newIp.setTextColor(green)
+                log.text = "TÚNEL: LISTO
+RUTA: ESTABLECIDA
+ESTADO: CONECTADO"
+                lock.rotation = 0f
+                lock.setTextColor(green)
+                close.text = "FINALIZAR"
+                close.background = GradientDrawable().apply {
+                    setColor(green)
+                    cornerRadius = dp(12).toFloat()
+                }
+                close.setOnClickListener { closeVpnSimulationOverlay(true) }
+            }
+        }.start()
+    }
+
+    private fun closeVpnSimulationOverlay(activated: Boolean) {
+        vpnSimulationTimer?.cancel()
+        vpnSimulationTimer = null
+        vpnOverlayView?.let { view ->
+            (view.parent as? ViewGroup)?.removeView(view)
+        }
+        vpnOverlayView = null
+
+        if (activated) {
+            prefs.edit().putBoolean("track_active", true).apply()
+            showHome()
+            toast("VPN SIMULADA ACTIVADA")
         }
     }
 
@@ -641,7 +838,6 @@ class MainActivity : Activity() {
         closeButton.visibility = View.GONE
         addButton(overlay, closeButton)
 
-        // Se eliminó aquí el texto "DIAGNÓSTICO VISUAL SIMULADO".
 
         frame.addView(
             overlay,
@@ -916,6 +1112,13 @@ class MainActivity : Activity() {
     }
 
     private fun logout() {
+        vpnSimulationTimer?.cancel()
+        vpnSimulationTimer = null
+        vpnOverlayView?.let { view ->
+            (view.parent as? ViewGroup)?.removeView(view)
+        }
+        vpnOverlayView = null
+
         overlayTimer?.cancel()
         overlayTimer = null
 
@@ -934,6 +1137,10 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        vpnSimulationTimer?.cancel()
+        vpnSimulationTimer = null
+        vpnOverlayView = null
+
         overlayTimer?.cancel()
         overlayTimer = null
 
