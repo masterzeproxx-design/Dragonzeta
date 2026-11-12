@@ -782,7 +782,7 @@ class MainActivity : Activity() {
             setTextColor(Color.WHITE)
             setPadding(dp(16), dp(16), dp(16), dp(16))
             typeface = Typeface.MONOSPACE
-            isTextSelectable = true
+            setTextIsSelectable(true)
         }
 
         val scroll = ScrollView(this).apply {
