@@ -1,3 +1,4 @@
+
 package com.dragonzeta.security
 
 import android.Manifest
@@ -641,9 +642,7 @@ class MainActivity : Activity() {
         closeButton.visibility = View.GONE
         addButton(overlay, closeButton)
 
-        overlay.addView(
-            label("DIAGNÓSTICO VISUAL SIMULADO", 10f, Color.LTGRAY)
-        )
+        // Se eliminó aquí el texto "DIAGNÓSTICO VISUAL SIMULADO".
 
         frame.addView(
             overlay,
