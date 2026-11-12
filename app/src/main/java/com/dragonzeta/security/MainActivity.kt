@@ -777,7 +777,7 @@ class MainActivity : Activity() {
         loginButtonRef?.text = "INGRESAR AL SISTEMA"
 
         val errorText = TextView(this).apply {
-            text = message
+            this.text = message
             textSize = 14f
             setTextColor(Color.WHITE)
             setPadding(dp(16), dp(16), dp(16), dp(16))
