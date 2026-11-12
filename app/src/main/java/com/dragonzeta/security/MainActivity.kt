@@ -776,23 +776,19 @@ class MainActivity : Activity() {
         loginButtonRef?.isEnabled = true
         loginButtonRef?.text = "INGRESAR AL SISTEMA"
 
-        val errorText = TextView(this)
-        errorText.text = message
-        errorText.textSize = 14f
-        errorText.setTextColor(Color.WHITE)
-        errorText.setPadding(dp(16), dp(16), dp(16), dp(16))
-        errorText.typeface = Typeface.MONOSPACE
-        errorText.setTextIsSelectable(true)
+        val errorText = TextView(this).apply {
+            text = message
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            typeface = Typeface.MONOSPACE
+            isTextSelectable = true
+        }
 
-        val scroll = ScrollView(this)
-        scroll.isFillViewport = false
-        scroll.addView(
-            errorText,
-            ScrollView.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        )
+        val scroll = ScrollView(this).apply {
+            isFillViewport = false
+            addView(errorText)
+        }
 
         val builder = android.app.AlertDialog.Builder(this)
         builder.setTitle("ERROR DRAGÓN ZETA")
