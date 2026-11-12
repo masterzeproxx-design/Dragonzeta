@@ -718,8 +718,7 @@ class MainActivity : Activity() {
                     else -> "Servidor: Ámsterdam • conectado"
                 }
                 val index = ((percent / 18).coerceAtMost(messages.lastIndex))
-                log.text = messages.take(index + 1).joinToString("
-") { "› $it" }
+                log.text = messages.take(index + 1).joinToString("\n") { "› $it" }
                 lock.rotation = if (percent % 20 < 10) -8f else 8f
             }
 
@@ -732,9 +731,7 @@ class MainActivity : Activity() {
                 oldIp.text = "IP ANTERIOR: 198.51.100.24"
                 newIp.text = "IP DE DEMOSTRACIÓN: 203.0.113.58"
                 newIp.setTextColor(green)
-                log.text = "TÚNEL: LISTO
-RUTA: ESTABLECIDA
-ESTADO: CONECTADO"
+                log.text = "TÚNEL: LISTO\nRUTA: ESTABLECIDA\nESTADO: CONECTADO"
                 lock.rotation = 0f
                 lock.setTextColor(green)
                 close.text = "FINALIZAR"
@@ -837,7 +834,6 @@ ESTADO: CONECTADO"
 
         closeButton.visibility = View.GONE
         addButton(overlay, closeButton)
-
 
         frame.addView(
             overlay,
