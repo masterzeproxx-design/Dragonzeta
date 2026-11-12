@@ -5,8 +5,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
-import android.graphics.Color
-import android.graphics.Typeface
+import android.graphics.*
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Build
@@ -14,7 +13,6 @@ import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsets
 import android.view.animation.LinearInterpolator
 import android.widget.*
 import android.text.InputType
@@ -23,13 +21,13 @@ import android.animation.ValueAnimator
 
 class MainActivity : Activity() {
 
-    private val bg = Color.rgb(4, 10, 25)
-    private val panelColor = Color.rgb(10, 22, 43)
+    private val bg = Color.rgb(3, 8, 20)
+    private val panelColor = Color.rgb(8, 19, 38)
     private val cyan = Color.rgb(0, 220, 255)
-    private val green = Color.rgb(0, 230, 130)
+    private val green = Color.rgb(0, 235, 145)
     private val red = Color.rgb(255, 55, 75)
     private val amber = Color.rgb(255, 180, 40)
-    private val blueButton = Color.rgb(0, 90, 255)
+    private val blueButton = Color.rgb(0, 105, 220)
 
     private val accessUser = "ZEPROXX"
     private val accessPassword = "16071997"
@@ -66,16 +64,12 @@ class MainActivity : Activity() {
         }
 
         window.decorView.systemUiVisibility = 0
-
         showLogin()
     }
 
     override fun onResume() {
         super.onResume()
-
-        if (loggedIn) {
-            showHome()
-        }
+        if (loggedIn) showHome()
     }
 
     private fun dp(value: Int): Int {
@@ -86,16 +80,15 @@ class MainActivity : Activity() {
         color: Int,
         translucent: Boolean = false
     ): GradientDrawable {
-        return GradientDrawable().apply {
-            setColor(
-                if (translucent) {
-                    Color.argb(218, 10, 22, 43)
-                } else {
-                    panelColor
-                }
+        return GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            intArrayOf(
+                Color.rgb(12, 30, 55),
+                Color.rgb(5, 13, 29)
             )
+        ).apply {
             setStroke(dp(1), color)
-            cornerRadius = dp(15).toFloat()
+            cornerRadius = dp(17).toFloat()
         }
     }
 
@@ -111,7 +104,8 @@ class MainActivity : Activity() {
             setTextColor(color)
             gravity = Gravity.CENTER
             if (bold) typeface = Typeface.DEFAULT_BOLD
-            setPadding(dp(8), dp(7), dp(8), dp(7))
+            setPadding(dp(8), dp(6), dp(8), dp(6))
+            letterSpacing = 0.035f
         }
     }
 
@@ -123,11 +117,20 @@ class MainActivity : Activity() {
         return Button(this).apply {
             this.text = text
             setTextColor(Color.WHITE)
-            textSize = 14f
+            textSize = 13f
             typeface = Typeface.DEFAULT_BOLD
+            letterSpacing = 0.04f
             background = GradientDrawable().apply {
-                setColor(color)
-                cornerRadius = dp(12).toFloat()
+                colors = intArrayOf(
+                    color,
+                    Color.rgb(
+                        (Color.red(color) * 0.72f).toInt(),
+                        (Color.green(color) * 0.72f).toInt(),
+                        (Color.blue(color) * 0.72f).toInt()
+                    )
+                )
+                cornerRadius = dp(13).toFloat()
+                setStroke(dp(1), Color.argb(100, 255, 255, 255))
             }
             setOnClickListener { action() }
         }
@@ -138,24 +141,164 @@ class MainActivity : Activity() {
             child,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(52)
+                dp(49)
             ).apply {
-                setMargins(dp(5), dp(7), dp(5), dp(7))
+                setMargins(dp(4), dp(6), dp(4), dp(6))
             }
         )
     }
 
+    // CONTENEDOR: DEJA ESPACIO SUPERIOR PARA LA BARRA DEL TELÉFONO
     private fun createRoot(): LinearLayout {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
             setPadding(
-                dp(18),
-                dp(12),
-                dp(18),
-                dp(25)
+                dp(17),
+                dp(28),
+                dp(17),
+                dp(22)
             )
-            setBackgroundColor(bg)
+            setBackgroundColor(Color.TRANSPARENT)
+        }
+    }
+
+    // ICONOS TECNOLÓGICOS DIBUJADOS
+    private inner class CyberIconView(
+        private val iconType: String,
+        private val iconColor: Int
+    ) : View(this) {
+
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = dp(2.4).toFloat()
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+            color = iconColor
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+
+            val s = dp(62).toFloat()
+            val cx = width / 2f
+            val cy = height / 2f
+            val left = cx - s / 2f
+            val top = cy - s / 2f
+
+            paint.style = Paint.Style.FILL
+            paint.color = Color.argb(28, Color.red(iconColor),
+                Color.green(iconColor), Color.blue(iconColor))
+            canvas.drawCircle(cx, cy, s * 0.49f, paint)
+
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = dp(2).toFloat()
+            paint.color = iconColor
+            canvas.drawCircle(cx, cy, s * 0.49f, paint)
+
+            paint.strokeWidth = dp(2.6).toFloat()
+
+            when (iconType) {
+                "mic" -> {
+                    val r = RectF(
+                        cx - s * 0.12f,
+                        cy - s * 0.30f,
+                        cx + s * 0.12f,
+                        cy + s * 0.12f
+                    )
+                    canvas.drawRoundRect(r, s * 0.12f, s * 0.12f, paint)
+
+                    val p = Path().apply {
+                        moveTo(cx - s * 0.25f, cy - s * 0.02f)
+                        lineTo(cx - s * 0.25f, cy + s * 0.08f)
+                        quadTo(cx, cy + s * 0.40f, cx + s * 0.25f, cy + s * 0.08f)
+                        lineTo(cx + s * 0.25f, cy - s * 0.02f)
+                        moveTo(cx, cy + s * 0.28f)
+                        lineTo(cx, cy + s * 0.40f)
+                        moveTo(cx - s * 0.14f, cy + s * 0.40f)
+                        lineTo(cx + s * 0.14f, cy + s * 0.40f)
+                    }
+                    canvas.drawPath(p, paint)
+                }
+
+                "pin" -> {
+                    val p = Path().apply {
+                        moveTo(cx, cy + s * 0.40f)
+                        cubicTo(
+                            cx - s * 0.10f, cy + s * 0.20f,
+                            cx - s * 0.31f, cy - s * 0.04f,
+                            cx - s * 0.31f, cy - s * 0.18f
+                        )
+                        arcTo(
+                            RectF(
+                                cx - s * 0.31f,
+                                cy - s * 0.43f,
+                                cx + s * 0.31f,
+                                cy + s * 0.18f
+                            ),
+                            180f,
+                            180f,
+                            false
+                        )
+                        cubicTo(
+                            cx + s * 0.31f, cy - s * 0.04f,
+                            cx + s * 0.10f, cy + s * 0.20f,
+                            cx, cy + s * 0.40f
+                        )
+                    }
+                    canvas.drawPath(p, paint)
+                    canvas.drawCircle(cx, cy - s * 0.18f, s * 0.09f, paint)
+                }
+
+                "shield" -> {
+                    val p = Path().apply {
+                        moveTo(cx, cy - s * 0.37f)
+                        lineTo(cx + s * 0.29f, cy - s * 0.24f)
+                        lineTo(cx + s * 0.25f, cy + s * 0.12f)
+                        quadTo(cx + s * 0.17f, cy + s * 0.31f, cx, cy + s * 0.40f)
+                        quadTo(cx - s * 0.17f, cy + s * 0.31f, cx - s * 0.25f, cy + s * 0.12f)
+                        lineTo(cx - s * 0.29f, cy - s * 0.24f)
+                        close()
+                    }
+                    canvas.drawPath(p, paint)
+
+                    val check = Path().apply {
+                        moveTo(cx - s * 0.13f, cy)
+                        lineTo(cx - s * 0.02f, cy + s * 0.12f)
+                        lineTo(cx + s * 0.16f, cy - s * 0.12f)
+                    }
+                    canvas.drawPath(check, paint)
+                }
+
+                "whatsapp" -> {
+                    canvas.drawCircle(cx, cy - s * 0.04f, s * 0.27f, paint)
+
+                    val phone = Path().apply {
+                        moveTo(cx - s * 0.13f, cy - s * 0.18f)
+                        quadTo(cx - s * 0.20f, cy - s * 0.10f, cx - s * 0.08f, cy + s * 0.04f)
+                        quadTo(cx + s * 0.02f, cy + s * 0.17f, cx + s * 0.15f, cy + s * 0.10f)
+                    }
+                    canvas.drawPath(phone, paint)
+
+                    val tail = Path().apply {
+                        moveTo(cx - s * 0.18f, cy + s * 0.18f)
+                        lineTo(cx - s * 0.31f, cy + s * 0.32f)
+                        lineTo(cx - s * 0.05f, cy + s * 0.25f)
+                    }
+                    canvas.drawPath(tail, paint)
+                }
+
+                "sos" -> {
+                    canvas.drawCircle(cx, cy, s * 0.29f, paint)
+                    paint.style = Paint.Style.FILL
+                    canvas.drawCircle(cx, cy, s * 0.09f, paint)
+                    paint.style = Paint.Style.STROKE
+                    canvas.drawLine(cx, cy - s * 0.48f, cx, cy - s * 0.36f, paint)
+                    canvas.drawLine(cx, cy + s * 0.36f, cx, cy + s * 0.48f, paint)
+                    canvas.drawLine(cx - s * 0.48f, cy, cx - s * 0.36f, cy, paint)
+                    canvas.drawLine(cx + s * 0.36f, cy, cx + s * 0.48f, cy, paint)
+                }
+            }
         }
     }
 
@@ -163,14 +306,14 @@ class MainActivity : Activity() {
         root: LinearLayout,
         watermark: Boolean = false
     ) {
-        val scroll = ScrollView(this)
-
-        if (watermark) {
-            root.setBackgroundColor(Color.TRANSPARENT)
-            scroll.setBackgroundColor(Color.TRANSPARENT)
-        } else {
-            scroll.setBackgroundColor(bg)
+        val scroll = ScrollView(this).apply {
+            isFillViewport = false
+            clipToPadding = false
+            setPadding(0, 0, 0, dp(8))
+            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         }
+
+        scroll.setBackgroundColor(Color.TRANSPARENT)
 
         scroll.addView(
             root,
@@ -187,13 +330,8 @@ class MainActivity : Activity() {
             val logo = ImageView(this).apply {
                 setImageResource(R.drawable.dragon_zeta_logo)
                 scaleType = ImageView.ScaleType.FIT_CENTER
-                alpha = 0.16f
-                setPadding(
-                    dp(25),
-                    dp(45),
-                    dp(25),
-                    dp(45)
-                )
+                alpha = 0.10f
+                setPadding(dp(25), dp(50), dp(25), dp(50))
                 importantForAccessibility =
                     View.IMPORTANT_FOR_ACCESSIBILITY_NO
             }
@@ -226,8 +364,9 @@ class MainActivity : Activity() {
     ): LinearLayout {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(12), dp(12), dp(12), dp(12))
+            setPadding(dp(13), dp(12), dp(13), dp(12))
             background = panel(color, true)
+            elevation = dp(3).toFloat()
         }
 
         root.addView(
@@ -236,90 +375,149 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(0, dp(9), 0, dp(9))
+                setMargins(0, dp(7), 0, dp(7))
             }
         )
 
-        card.addView(label(title, 16f, color, true))
+        val heading = label(title, 15f, color, true)
+        heading.letterSpacing = 0.07f
+        card.addView(heading)
+
         return card
     }
 
-    // ENCABEZADO CON LOGO ORIGINAL
+    // ENCABEZADO CON LOGO DESTACADO
     private fun addHeader(root: LinearLayout) {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(5), dp(5), dp(5), dp(5))
+            setPadding(dp(5), dp(5), dp(5), dp(8))
+        }
+
+        val logoFrame = FrameLayout(this).apply {
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.rgb(5, 28, 48))
+                setStroke(dp(1), cyan)
+            }
+            elevation = dp(8).toFloat()
         }
 
         val logo = ImageView(this).apply {
             setImageResource(R.drawable.dragon_zeta_logo)
             scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(dp(5), dp(5), dp(5), dp(5))
         }
 
-        header.addView(
+        logoFrame.addView(
             logo,
-            LinearLayout.LayoutParams(dp(52), dp(55))
-        )
-
-        header.addView(
-            label("DRAGÓN ZETA", 21f, cyan, true),
-            LinearLayout.LayoutParams(
-                0,
-                dp(55),
-                1f
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
             )
         )
 
-        val paid = label("PAGADO", 12f, Color.BLACK, true)
-        paid.background = GradientDrawable().apply {
-            setColor(green)
-            cornerRadius = dp(20).toFloat()
-            setStroke(dp(1), Color.WHITE)
+        header.addView(
+            logoFrame,
+            LinearLayout.LayoutParams(dp(68), dp(68)).apply {
+                setMargins(dp(3), 0, dp(10), 0)
+            }
+        )
+
+        val nameColumn = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
         }
 
+        nameColumn.addView(
+            label("DRAGÓN ZETA", 20f, cyan, true)
+        )
+        nameColumn.addView(
+            label("CYBER SECURITY SYSTEM", 9f, Color.LTGRAY, true)
+        )
+
+        header.addView(
+            nameColumn,
+            LinearLayout.LayoutParams(0, dp(65), 1f)
+        )
+
+        val paid = label("PAGADO", 11f, Color.BLACK, true)
+        paid.background = GradientDrawable().apply {
+            setColor(green)
+            cornerRadius = dp(18).toFloat()
+            setStroke(dp(1), Color.WHITE)
+        }
         header.addView(paid)
+
         root.addView(header)
 
-        val divider = View(this).apply {
-            setBackgroundColor(cyan)
+        val line = View(this).apply {
+            background = GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(
+                    Color.TRANSPARENT,
+                    cyan,
+                    green,
+                    Color.TRANSPARENT
+                )
+            )
         }
 
         root.addView(
-            divider,
+            line,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(1)
+                dp(2)
             ).apply {
-                setMargins(dp(5), dp(5), dp(5), dp(8))
+                setMargins(dp(5), dp(3), dp(5), dp(9))
             }
         )
     }
 
+    // LOGIN FUTURISTA
     private fun showLogin() {
         val root = createRoot()
 
-        root.addView(label("🐉 DRAGÓN ZETA", 27f, cyan, true))
-        root.addView(label("SEGURIDAD PERSONAL", 13f, green, true))
-
-        val image = ImageView(this)
-        val imageId = resources.getIdentifier(
-            "dragon_zeta_login_header",
-            "drawable",
-            packageName
+        root.addView(
+            label("SISTEMA DE ACCESO", 12f, green, true)
         )
 
-        if (imageId != 0) {
-            image.setImageResource(imageId)
-            image.scaleType = ImageView.ScaleType.FIT_CENTER
-            root.addView(
-                image,
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    dp(220)
-                )
-            )
+        val logoFrame = FrameLayout(this).apply {
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.rgb(5, 25, 45))
+                setStroke(dp(2), cyan)
+            }
+            elevation = dp(10).toFloat()
         }
+
+        val image = ImageView(this).apply {
+            setImageResource(R.drawable.dragon_zeta_logo)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(dp(8), dp(8), dp(8), dp(8))
+        }
+
+        logoFrame.addView(
+            image,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        root.addView(
+            logoFrame,
+            LinearLayout.LayoutParams(dp(142), dp(142)).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                setMargins(0, dp(12), 0, dp(12))
+            }
+        )
+
+        root.addView(label("DRAGÓN ZETA", 26f, cyan, true))
+        root.addView(label("SEGURIDAD PERSONAL", 12f, green, true))
+        root.addView(
+            label("PROTECCIÓN • CONTROL • SEGURIDAD", 9f, Color.LTGRAY)
+        )
 
         val card = createCard(root, "ACCESO DE USUARIO", cyan)
 
@@ -327,29 +525,31 @@ class MainActivity : Activity() {
             hint = "Usuario"
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
+            textSize = 15f
             isSingleLine = true
             background = panel(cyan)
-            setPadding(dp(12), dp(8), dp(12), dp(8))
+            setPadding(dp(14), dp(8), dp(14), dp(8))
         }
 
         val password = EditText(this).apply {
             hint = "Contraseña"
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
+            textSize = 15f
             inputType = InputType.TYPE_CLASS_TEXT or
                 InputType.TYPE_TEXT_VARIATION_PASSWORD
             isSingleLine = true
             background = panel(cyan)
-            setPadding(dp(12), dp(8), dp(12), dp(8))
+            setPadding(dp(14), dp(8), dp(14), dp(8))
         }
 
         card.addView(
             username,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(58)
+                dp(56)
             ).apply {
-                setMargins(0, dp(6), 0, dp(6))
+                setMargins(0, dp(7), 0, dp(7))
             }
         )
 
@@ -357,13 +557,13 @@ class MainActivity : Activity() {
             password,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(58)
+                dp(56)
             ).apply {
-                setMargins(0, dp(6), 0, dp(6))
+                setMargins(0, dp(7), 0, dp(7))
             }
         )
 
-        addButton(card, makeButton("INGRESAR", green) {
+        addButton(card, makeButton("INGRESAR AL SISTEMA", green) {
             if (username.text.toString().trim() == accessUser &&
                 password.text.toString() == accessPassword
             ) {
@@ -374,10 +574,14 @@ class MainActivity : Activity() {
             }
         })
 
-        root.addView(label("SISTEMA DE PROTECCIÓN", 11f, Color.GRAY))
+        root.addView(
+            label("SISTEMA DE PROTECCIÓN", 10f, Color.GRAY)
+        )
+
         showScreen(root)
     }
 
+    // PANEL PRINCIPAL
     private fun showHome() {
         if (!loggedIn) {
             showLogin()
@@ -387,34 +591,37 @@ class MainActivity : Activity() {
         val root = createRoot()
         addHeader(root)
 
-        root.addView(label("PANEL DE CONTROL", 22f, Color.WHITE, true))
         root.addView(
-            label("CENTRO DE SEGURIDAD PERSONAL", 11f, cyan, true)
+            label("PANEL DE CONTROL", 21f, Color.WHITE, true)
+        )
+        root.addView(
+            label("CENTRO DE SEGURIDAD PERSONAL", 10f, cyan, true)
         )
 
-        val profile = createCard(root, "👤 PERFIL DE USUARIO", cyan)
-        profile.addView(label("ZEPROXX", 23f, Color.WHITE, true))
-        profile.addView(label("USUARIO AUTORIZADO", 13f, green, true))
+        val profile = createCard(root, "PERFIL DE USUARIO", cyan)
+        profile.addView(label("ZEPROXX", 22f, Color.WHITE, true))
+        profile.addView(label("USUARIO AUTORIZADO", 12f, green, true))
         profile.addView(
-            label("ESTADO: SISTEMA DISPONIBLE", 12f, Color.LTGRAY)
+            label("ESTADO: SISTEMA DISPONIBLE", 11f, Color.LTGRAY)
         )
 
-        val statusCard = createCard(root, "🛡️ PROTECCIÓN", green)
-        statusCard.addView(
-            label("DRAGÓN ZETA ESTÁ LISTO", 16f, Color.WHITE, true)
+        val statusCard = createCard(root, "PROTECCIÓN DEL SISTEMA", green)
+        statusCard.addView(CyberIconView("shield", green),
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(76)
+            )
         )
         statusCard.addView(
-            label(
-                "Controla tus opciones desde este panel",
-                12f,
-                Color.LTGRAY
-            )
+            label("DRAGÓN ZETA ESTÁ LISTO", 15f, Color.WHITE, true)
+        )
+        statusCard.addView(
+            label("Controla tus opciones desde este panel", 11f, Color.LTGRAY)
         )
 
         addSOSCard(root)
-
-        addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
-        addOption(root, "📍 ANTI-RASTREO", "track")
+        addOption(root, "ANTI-CHUPONEO", "spy")
+        addOption(root, "ANTI-RASTREO", "track")
         addWhatsAppProtection(root)
 
         addButton(root, makeButton("CERRAR SESIÓN", amber) {
@@ -422,7 +629,7 @@ class MainActivity : Activity() {
         })
 
         root.addView(
-            label("🐉 DRAGÓN ZETA • VERSIÓN 1.0", 11f, Color.GRAY)
+            label("DRAGÓN ZETA • VERSIÓN 1.0", 10f, Color.GRAY)
         )
 
         showScreen(root, watermark = true)
@@ -435,27 +642,27 @@ class MainActivity : Activity() {
 
         val card = createCard(
             root,
-            "🆘 BOTÓN SOS",
+            "BOTÓN SOS",
             if (active) green else red
         )
 
+        card.addView(
+            CyberIconView("sos", if (active) green else red),
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(70)
+            )
+        )
+
         if (active) {
+            card.addView(label("SOS ACTIVADO", 20f, green, true))
             card.addView(
-                label("✓ SOS ACTIVADO", 22f, green, true)
+                label("Número de emergencia: $number", 12f, Color.WHITE)
             )
-
-            card.addView(
-                label(
-                    "Número de emergencia: $number",
-                    13f,
-                    Color.WHITE
-                )
-            )
-
             card.addView(
                 label(
                     "Dos pulsaciones de VOLUMEN ARRIBA activan la alerta.",
-                    12f,
+                    11f,
                     Color.LTGRAY
                 )
             )
@@ -490,7 +697,7 @@ class MainActivity : Activity() {
 
         } else {
             card.addView(
-                label("Configura tu número de emergencia", 14f, Color.WHITE)
+                label("Configura tu número de emergencia", 13f, Color.WHITE)
             )
 
             val phone = EditText(this).apply {
@@ -508,13 +715,12 @@ class MainActivity : Activity() {
                 phone,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    dp(54)
+                    dp(52)
                 )
             )
 
             addButton(card, makeButton("GUARDAR Y ACTIVAR SOS", green) {
                 val newNumber = phone.text.toString().trim()
-
                 if (newNumber.isBlank()) {
                     toast("Escribe un número.")
                 } else {
@@ -524,9 +730,8 @@ class MainActivity : Activity() {
 
             card.addView(
                 label(
-                    "Después de activar, podrás usar dos pulsaciones " +
-                        "de volumen arriba.",
-                    11f,
+                    "Después de activar, podrás usar dos pulsaciones de volumen arriba.",
+                    10f,
                     Color.LTGRAY
                 )
             )
@@ -571,7 +776,7 @@ class MainActivity : Activity() {
             .apply()
 
         showHome()
-        toast("✓ SOS ACTIVADO CORRECTAMENTE")
+        toast("SOS ACTIVADO CORRECTAMENTE")
     }
 
     override fun onRequestPermissionsResult(
@@ -614,20 +819,32 @@ class MainActivity : Activity() {
         key: String
     ) {
         val active = prefs.getBoolean("${key}_active", false)
+        val isSpy = key == "spy"
+        val optionColor = if (isSpy) green else cyan
 
-        val optionColor = if (key == "spy") green else cyan
         val card = createCard(
             root,
             title,
             if (active) green else optionColor
         )
 
-        if (key == "spy") {
+        card.addView(
+            CyberIconView(
+                if (isSpy) "mic" else "pin",
+                if (active) green else optionColor
+            ),
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(76)
+            )
+        )
+
+        if (isSpy) {
             card.addView(
                 label(
-                    if (active) "✓ RED SEGURA • FUNCIÓN ACTIVADA"
+                    if (active) "FUNCIÓN ACTIVADA"
                     else "Sistema de análisis de seguridad de red",
-                    12f,
+                    11f,
                     if (active) green else Color.LTGRAY,
                     active
                 )
@@ -651,12 +868,12 @@ class MainActivity : Activity() {
                     }
                 }
             )
-        } else if (key == "track") {
+        } else {
             card.addView(
                 label(
-                    if (active) "✓ VPN ACTUALIZADA"
+                    if (active) "VPN ACTUALIZADA"
                     else "Actualiza la presentación de tu conexión",
-                    12f,
+                    11f,
                     if (active) green else Color.LTGRAY,
                     active
                 )
@@ -672,7 +889,9 @@ class MainActivity : Activity() {
                     if (vpnSimulationTimer != null) return@makeButton
 
                     if (prefs.getBoolean("track_active", false)) {
-                        prefs.edit().putBoolean("track_active", false).apply()
+                        prefs.edit()
+                            .putBoolean("track_active", false)
+                            .apply()
                         showHome()
                         toast("VPN desconectada.")
                     } else {
@@ -689,7 +908,7 @@ class MainActivity : Activity() {
         if (vpnSimulationTimer != null) return
 
         val overlay = FrameLayout(this).apply {
-            setBackgroundColor(Color.argb(178, 0, 5, 16))
+            setBackgroundColor(Color.argb(190, 0, 5, 16))
             isClickable = true
             isFocusable = true
         }
@@ -698,19 +917,15 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             setPadding(dp(20), dp(22), dp(20), dp(20))
-            background = GradientDrawable().apply {
-                setColor(Color.argb(248, 8, 20, 39))
-                setStroke(dp(1), cyan)
-                cornerRadius = dp(22).toFloat()
-            }
+            background = panel(cyan)
             elevation = dp(18).toFloat()
         }
 
-        card.addView(label("🐉 DRAGÓN ZETA", 22f, cyan, true))
+        card.addView(label("DRAGÓN ZETA", 22f, cyan, true))
         card.addView(label("VPN ACTUALIZADA", 14f, green, true))
+        card.addView(label("◈", 54f, cyan, true))
 
-        val lock = label("◈", 54f, cyan, true)
-        card.addView(lock)
+        val lock = card.getChildAt(2)
 
         val status = label("INICIANDO CONEXIÓN...", 16f, Color.WHITE, true)
         card.addView(status)
@@ -740,11 +955,7 @@ class MainActivity : Activity() {
         val ipPanel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(8), dp(12), dp(8))
-            background = GradientDrawable().apply {
-                setColor(Color.argb(190, 2, 12, 27))
-                setStroke(dp(1), Color.argb(150, 0, 220, 255))
-                cornerRadius = dp(12).toFloat()
-            }
+            background = panel(cyan)
         }
 
         val oldIp = label("IP ANTERIOR: —", 12f, Color.LTGRAY)
@@ -777,15 +988,16 @@ class MainActivity : Activity() {
             ).apply { setMargins(0, dp(10), 0, 0) }
         )
 
-        val cardParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            Gravity.CENTER
-        ).apply {
-            setMargins(dp(22), dp(18), dp(22), dp(18))
-        }
-
-        overlay.addView(card, cardParams)
+        overlay.addView(
+            card,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+            ).apply {
+                setMargins(dp(22), dp(18), dp(22), dp(18))
+            }
+        )
 
         frame.addView(
             overlay,
@@ -828,7 +1040,6 @@ class MainActivity : Activity() {
                 }
 
                 val index = (percent / 18).coerceAtMost(messages.lastIndex)
-
                 log.text = messages.take(index + 1)
                     .joinToString("\n") { "› $it" }
 
@@ -837,20 +1048,14 @@ class MainActivity : Activity() {
 
             override fun onFinish() {
                 vpnSimulationTimer = null
-
                 progress.progress = 100
-                status.text = "✓ VPN ACTUALIZADA"
+                status.text = "VPN ACTUALIZADA"
                 status.setTextColor(green)
-
                 server.text = "Servidor: Ámsterdam, Países Bajos"
-
                 oldIp.text = "IP ANTERIOR: 198.51.100.24"
-
                 newIp.text = "IP ACTUALIZADA\nNUEVA IP: 203.0.113.58"
                 newIp.setTextColor(green)
-
                 log.text = "TÚNEL: LISTO\nRUTA: ESTABLECIDA\nESTADO: CONECTADO"
-
                 lock.rotation = 0f
                 lock.setTextColor(green)
 
@@ -884,6 +1089,7 @@ class MainActivity : Activity() {
         }
     }
 
+    // ANTI-CHUPONEO
     private fun showAntiChuponeoOverlay() {
         val frame = overlayFrame ?: return
         if (overlayTimer != null) return
@@ -895,7 +1101,7 @@ class MainActivity : Activity() {
             setBackgroundColor(Color.argb(190, 1, 7, 15))
         }
 
-        overlay.addView(label("🐉 DRAGÓN ZETA", 24f, cyan, true))
+        overlay.addView(label("DRAGÓN ZETA", 24f, cyan, true))
         overlay.addView(
             label("CYBER SECURITY TERMINAL", 13f, green, true)
         )
@@ -910,11 +1116,7 @@ class MainActivity : Activity() {
             gravity = Gravity.START
             setPadding(dp(12), dp(12), dp(12), dp(12))
             setLineSpacing(dp(4).toFloat(), 1f)
-            background = GradientDrawable().apply {
-                setColor(Color.argb(90, 0, 20, 15))
-                setStroke(dp(1), Color.argb(150, 0, 230, 130))
-                cornerRadius = dp(12).toFloat()
-            }
+            background = panel(green)
         }
 
         overlay.addView(
@@ -1025,7 +1227,7 @@ class MainActivity : Activity() {
                     .putBoolean("spy_active", true)
                     .apply()
 
-                status.text = "✓ RED SEGURA\nFUNCIÓN ACTIVADA"
+                status.text = "RED SEGURA\nFUNCIÓN ACTIVADA"
                 status.setTextColor(green)
                 closeButton.visibility = View.VISIBLE
             }
@@ -1049,12 +1251,20 @@ class MainActivity : Activity() {
 
     // ANTI-HACK WSP
     private fun addWhatsAppProtection(root: LinearLayout) {
-        val card = createCard(root, "🛡️ ANTI-HACK WSP", green)
+        val card = createCard(root, "ANTI-HACK WSP", green)
+
+        card.addView(
+            CyberIconView("whatsapp", green),
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(78)
+            )
+        )
 
         card.addView(
             label(
                 "Sistema visual de protección de WhatsApp",
-                13f,
+                12f,
                 Color.LTGRAY
             )
         )
@@ -1065,24 +1275,18 @@ class MainActivity : Activity() {
         )
 
         val shield = label(
-            "🛡️",
-            55f,
+            "◈",
+            40f,
             if (active) green else cyan,
             true
         )
 
-        card.addView(
-            shield,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(95)
-            )
-        )
+        card.addView(shield)
 
         val status = label(
             if (active) "REVISIÓN VISUAL COMPLETADA"
             else "SISTEMA EN ESPERA",
-            19f,
+            16f,
             if (active) green else cyan,
             true
         )
@@ -1092,7 +1296,7 @@ class MainActivity : Activity() {
         val detail = label(
             if (active) "Revisión visual finalizada"
             else "Presiona el botón para comenzar",
-            12f,
+            11f,
             Color.LTGRAY
         )
 
@@ -1116,16 +1320,16 @@ class MainActivity : Activity() {
             progress,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(12)
+                dp(10)
             ).apply {
-                setMargins(dp(12), dp(12), dp(12), dp(12))
+                setMargins(dp(12), dp(10), dp(12), dp(10))
             }
         )
 
         val button = makeButton(
             if (active) "ANTI-HACK WSP ACTIVADO"
             else "ACTIVAR ANTI-HACK WSP",
-            if (active) green else cyan
+            if (active) green else blueButton
         ) {}
 
         addButton(card, button)
@@ -1156,7 +1360,7 @@ class MainActivity : Activity() {
 
                 button.text = "ACTIVAR ANTI-HACK WSP"
                 button.background = GradientDrawable().apply {
-                    setColor(cyan)
+                    setColor(blueButton)
                     cornerRadius = dp(12).toFloat()
                 }
 
@@ -1195,8 +1399,7 @@ class MainActivity : Activity() {
 
                             progress.progress = percent
                             status.text = "REVISANDO CUENTA..."
-                            detail.text =
-                                "Revisión visual... $percent%"
+                            detail.text = "Revisión visual... $percent%"
                         }
 
                         override fun onFinish() {
