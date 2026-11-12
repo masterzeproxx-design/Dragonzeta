@@ -766,7 +766,7 @@ class MainActivity : Activity() {
             }
     }
 
-    // VENTANA COMPLETA PARA MOSTRAR Y COPIAR EL ERROR DE FIREBASE
+    // CUADRO DE ERROR COMPLETO Y BOTÓN PARA COPIAR
     private fun rejectFirebaseAccess(message: String) {
         loggedIn = false
         loginInProgress = false
@@ -776,66 +776,46 @@ class MainActivity : Activity() {
         loginButtonRef?.isEnabled = true
         loginButtonRef?.text = "INGRESAR AL SISTEMA"
 
-        val errorText = TextView(this).apply {
-            text = message
-            textSize = 14f
-            setTextColor(Color.WHITE)
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-            typeface = Typeface.MONOSPACE
-            textIsSelectable = true
-            gravity = Gravity.START
-        }
+        val errorText = TextView(this)
+        errorText.text = message
+        errorText.textSize = 14f
+        errorText.setTextColor(Color.WHITE)
+        errorText.setPadding(dp(16), dp(16), dp(16), dp(16))
+        errorText.typeface = Typeface.MONOSPACE
+        errorText.setTextIsSelectable(true)
 
-        val scroll = ScrollView(this).apply {
-            isFillViewport = false
-            isVerticalScrollBarEnabled = true
-            addView(
-                errorText,
-                ScrollView.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
-
-        val dialog = android.app.AlertDialog.Builder(this)
-            .setTitle("ERROR DRAGÓN ZETA")
-            .setView(
-                scroll,
-                dp(8),
-                dp(4),
-                dp(8),
-                dp(4)
-            )
-            .setPositiveButton("COPIAR ERROR", null)
-            .setNegativeButton("CERRAR", null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.window?.setLayout(
-                (resources.displayMetrics.widthPixels * 0.92f).toInt(),
+        val scroll = ScrollView(this)
+        scroll.isFillViewport = false
+        scroll.addView(
+            errorText,
+            ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
+        )
 
-            dialog.getButton(
-                android.app.AlertDialog.BUTTON_POSITIVE
-            ).setOnClickListener {
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setTitle("ERROR DRAGÓN ZETA")
+        builder.setView(scroll)
 
-                val clipboard =
-                    getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        builder.setPositiveButton("COPIAR ERROR") { _, _ ->
+            val clipboard =
+                getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
-                clipboard.setPrimaryClip(
-                    ClipData.newPlainText("Error Firebase", message)
-                )
+            clipboard.setPrimaryClip(
+                ClipData.newPlainText("Error Firebase", message)
+            )
 
-                Toast.makeText(
-                    this,
-                    "ERROR COPIADO. PÉGALO EN EL CHAT.",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            Toast.makeText(
+                this,
+                "ERROR COPIADO. PÉGALO EN EL CHAT.",
+                Toast.LENGTH_LONG
+            ).show()
         }
 
+        builder.setNegativeButton("CERRAR", null)
+
+        val dialog = builder.create()
         dialog.show()
     }
 
