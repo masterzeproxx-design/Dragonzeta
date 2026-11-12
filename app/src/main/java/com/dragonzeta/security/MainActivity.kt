@@ -8,7 +8,6 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
-import android.net.Uri
 import android.os.Bundle
 import android.os.Build
 import android.provider.Settings
@@ -40,9 +39,6 @@ class MainActivity : Activity() {
     private var loggedIn = false
     private var pendingSOSNumber = ""
 
-    private lateinit var countdownText: TextView
-    private lateinit var cancelButton: Button
-
     private var whatsappScanTimer: android.os.CountDownTimer? = null
     private var whatsappScanAnimator: ObjectAnimator? = null
 
@@ -52,8 +48,6 @@ class MainActivity : Activity() {
     companion object {
         private const val REQUEST_CALL_PERMISSION = 100
         private const val REQUEST_NOTIFICATION_SOS = 101
-        private const val REQUEST_LOCATION_PERMISSION = 200
-        private const val REQUEST_TRACKING_NOTIFICATION = 201
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -310,12 +304,6 @@ class MainActivity : Activity() {
 
         addSOSCard(root)
 
-        // CONTACTO DE EMERGENCIA WHATSAPP
-        addWhatsAppEmergencyCard(root)
-
-        // SEGUIMIENTO GPS
-        addTrackingCard(root)
-
         addOption(root, "🎙️ ANTI-CHUPONEO", "spy")
         addOption(root, "📍 ANTI-RASTREO", "track")
         addWhatsAppProtection(root)
@@ -436,79 +424,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // CONTACTO DE EMERGENCIA WHATSAPP
-    private fun addWhatsAppEmergencyCard(root: LinearLayout) {
-
-        val number = prefs.getString(
-            "whatsapp_emergency_phone",
-            ""
-        ) ?: ""
-
-        val card = createCard(
-            root,
-            "📲 CONTACTO DE EMERGENCIA WHATSAPP",
-            green
-        )
-
-        card.addView(
-            label(
-                "Número que recibirá las alertas de emergencia",
-                13f,
-                Color.WHITE
-            )
-        )
-
-        val phone = EditText(this).apply {
-            hint = "+51 999 999 999"
-            setHintTextColor(Color.GRAY)
-            setTextColor(Color.WHITE)
-            inputType = InputType.TYPE_CLASS_PHONE
-            isSingleLine = true
-            setText(number)
-            background = panel(cyan)
-            setPadding(dp(12), dp(8), dp(12), dp(8))
-        }
-
-        card.addView(
-            phone,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(54)
-            )
-        )
-
-        addButton(
-            card,
-            makeButton("GUARDAR CONTACTO DE EMERGENCIA", green) {
-
-                val newNumber = phone.text.toString().trim()
-
-                if (newNumber.isBlank()) {
-                    toast("Escribe el número de WhatsApp.")
-                } else {
-                    prefs.edit()
-                        .putString("whatsapp_emergency_phone", newNumber)
-                        .apply()
-
-                    toast("✓ CONTACTO DE EMERGENCIA GUARDADO")
-                    showHome()
-                }
-            }
-        )
-
-        card.addView(
-            label(
-                if (number.isNotBlank())
-                    "✓ CONTACTO CONFIGURADO"
-                else
-                    "AÚN NO HAY UN CONTACTO CONFIGURADO",
-                12f,
-                if (number.isNotBlank()) green else amber,
-                true
-            )
-        )
-    }
-
     private fun activateSOS(number: String) {
         pendingSOSNumber = number
 
@@ -550,7 +465,7 @@ class MainActivity : Activity() {
         toast("✓ SOS ACTIVADO CORRECTAMENTE")
     }
 
-    // PERMISOS DEL SISTEMA SOS Y GPS
+    // PERMISOS DEL SISTEMA SOS
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -581,191 +496,6 @@ class MainActivity : Activity() {
                     toast("Permite las notificaciones para poder cancelar el SOS.")
                 }
             }
-
-            REQUEST_LOCATION_PERMISSION -> {
-                if (granted) {
-                    requestTrackingNotificationPermission()
-                } else {
-                    toast("Debes permitir la ubicación precisa para usar el GPS.")
-                }
-            }
-
-            REQUEST_TRACKING_NOTIFICATION -> {
-                if (granted) {
-                    startGpsTracking()
-                } else {
-                    toast("Permite las notificaciones para iniciar el seguimiento.")
-                }
-            }
-        }
-    }
-
-    // SISTEMA DE SEGUIMIENTO GPS
-    private fun addTrackingCard(root: LinearLayout) {
-        val active = prefs.getBoolean("tracking_active", false)
-        val shareUrl = prefs.getString("tracking_share_url", "") ?: ""
-
-        val card = createCard(
-            root,
-            "📍 SEGUIMIENTO GPS",
-            if (active) green else cyan
-        )
-
-        card.addView(
-            label(
-                if (active) "✓ SEGUIMIENTO EN CURSO"
-                else "UBICACIÓN EN ESPERA",
-                19f,
-                if (active) green else cyan,
-                true
-            )
-        )
-
-        card.addView(
-            label(
-                "Máximo 1 hora. Puedes detenerlo antes cuando quieras.",
-                12f,
-                Color.LTGRAY
-            )
-        )
-
-        card.addView(
-            label(
-                "Tres pulsaciones de VOLUMEN ABAJO inician el seguimiento " +
-                    "cuando los permisos ya están concedidos.",
-                11f,
-                Color.LTGRAY
-            )
-        )
-
-        addButton(
-            card,
-            makeButton(
-                if (active) "SEGUIMIENTO ACTIVADO"
-                else "ACTIVAR SEGUIMIENTO GPS",
-                green
-            ) {
-                requestTrackingPermissions()
-            }
-        )
-
-        addButton(
-            card,
-            makeButton("COMPARTIR UBICACIÓN POR WHATSAPP", cyan) {
-                shareTrackingLink()
-            }
-        )
-
-        addButton(
-            card,
-            makeButton("DETENER SEGUIMIENTO GPS", red) {
-                if (prefs.getBoolean("tracking_active", false)) {
-                    SosTrackingService.stopTracking(this)
-                    toast("Solicitud para detener el seguimiento enviada.")
-                } else {
-                    toast("No hay un seguimiento activo.")
-                }
-            }
-        )
-
-        if (shareUrl.isNotBlank()) {
-            card.addView(
-                label(
-                    "ENLACE PRIVADO GENERADO",
-                    11f,
-                    green,
-                    true
-                )
-            )
-        } else {
-            card.addView(
-                label(
-                    "El enlace aparecerá cuando el servidor reciba la primera ubicación.",
-                    10f,
-                    Color.GRAY
-                )
-            )
-        }
-    }
-
-    private fun requestTrackingPermissions() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                REQUEST_LOCATION_PERMISSION
-            )
-            return
-        }
-
-        requestTrackingNotificationPermission()
-    }
-
-    private fun requestTrackingNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                REQUEST_TRACKING_NOTIFICATION
-            )
-            return
-        }
-
-        startGpsTracking()
-    }
-
-    private fun startGpsTracking() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            toast("Falta conceder el permiso de ubicación precisa.")
-            return
-        }
-
-        try {
-            SosTrackingService.startTracking(this)
-            toast("Iniciando seguimiento GPS...")
-        } catch (e: Exception) {
-            toast("No se pudo iniciar el GPS. Abre la aplicación e inténtalo de nuevo.")
-        }
-    }
-
-    private fun shareTrackingLink() {
-        val shareUrl = prefs.getString(
-            "tracking_share_url",
-            ""
-        ) ?: ""
-
-        if (shareUrl.isBlank()) {
-            toast("Primero activa el GPS y espera a que se genere el enlace.")
-            return
-        }
-
-        try {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(
-                    Intent.EXTRA_SUBJECT,
-                    "Mi ubicación - DRAGÓN ZETA"
-                )
-                putExtra(
-                    Intent.EXTRA_TEXT,
-                    "Estoy compartiendo mi ubicación en tiempo real. " +
-                        "Abre este enlace para ver el mapa:\n$shareUrl"
-                )
-            }
-
-            startActivity(
-                Intent.createChooser(
-                    shareIntent,
-                    "Compartir ubicación con..."
-                )
-            )
-        } catch (e: Exception) {
-            toast("No se pudo abrir el menú para compartir.")
         }
     }
 
@@ -1033,7 +763,8 @@ class MainActivity : Activity() {
         )
 
         val status = label(
-            if (active) "CUENTA PROTEGIDA" else "SISTEMA EN ESPERA",
+            if (active) "REVISIÓN VISUAL COMPLETADA"
+            else "SISTEMA EN ESPERA",
             19f,
             if (active) green else cyan,
             true
@@ -1042,7 +773,7 @@ class MainActivity : Activity() {
         card.addView(status)
 
         val detail = label(
-            if (active) "Protección visual activada"
+            if (active) "Revisión visual finalizada"
             else "Presiona el botón para comenzar",
             12f,
             Color.LTGRAY
@@ -1082,15 +813,6 @@ class MainActivity : Activity() {
 
         addButton(card, button)
 
-        card.addView(
-            label(
-                "La revisión es una simulación visual. " +
-                    "No detecta ataques reales ni modifica WhatsApp.",
-                10f,
-                Color.GRAY
-            )
-        )
-
         button.setOnClickListener {
             if (whatsappScanTimer != null) return@setOnClickListener
 
@@ -1108,9 +830,9 @@ class MainActivity : Activity() {
                 shield.rotation = 0f
                 shield.setTextColor(cyan)
 
-                status.text = "PROTECCIÓN DESACTIVADA"
+                status.text = "SISTEMA EN ESPERA"
                 status.setTextColor(cyan)
-                detail.text = "Sistema en espera"
+                detail.text = "Presiona el botón para comenzar"
                 progress.progress = 0
                 progress.progressTintList =
                     ColorStateList.valueOf(cyan)
@@ -1127,7 +849,7 @@ class MainActivity : Activity() {
                 button.text = "REVISANDO CUENTA..."
                 status.text = "REVISANDO CUENTA..."
                 status.setTextColor(cyan)
-                detail.text = "Analizando estado de protección..."
+                detail.text = "Realizando revisión visual..."
                 shield.setTextColor(cyan)
 
                 progress.progress = 0
@@ -1156,7 +878,7 @@ class MainActivity : Activity() {
                             progress.progress = percent
                             status.text = "REVISANDO CUENTA..."
                             detail.text =
-                                "Verificando protección... $percent%"
+                                "Revisión visual... $percent%"
                         }
 
                         override fun onFinish() {
@@ -1170,10 +892,9 @@ class MainActivity : Activity() {
                             progress.progressTintList =
                                 ColorStateList.valueOf(green)
 
-                            status.text = "CUENTA PROTEGIDA"
+                            status.text = "REVISIÓN VISUAL COMPLETADA"
                             status.setTextColor(green)
-                            detail.text =
-                                "PROTECCIÓN ACTIVADA CORRECTAMENTE"
+                            detail.text = "PROCESO FINALIZADO"
 
                             prefs.edit()
                                 .putBoolean(
@@ -1189,7 +910,7 @@ class MainActivity : Activity() {
                                 cornerRadius = dp(12).toFloat()
                             }
 
-                            toast("¡CUENTA PROTEGIDA!")
+                            toast("REVISIÓN VISUAL COMPLETADA")
                         }
                     }.start()
             }
