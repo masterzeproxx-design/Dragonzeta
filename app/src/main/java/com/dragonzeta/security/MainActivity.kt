@@ -1,4 +1,3 @@
-
 package com.dragonzeta.security
 
 import android.Manifest
