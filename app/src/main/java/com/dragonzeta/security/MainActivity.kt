@@ -1,3 +1,4 @@
+
 package com.dragonzeta.security
 
 import android.Manifest
@@ -41,6 +42,7 @@ class MainActivity : Activity() {
 
     private var whatsappScanTimer: android.os.CountDownTimer? = null
     private var whatsappScanAnimator: ObjectAnimator? = null
+    private var whatsappOverlayView: View? = null
 
     private var vpnSimulationTimer: android.os.CountDownTimer? = null
     private var vpnOverlayView: View? = null
@@ -148,7 +150,6 @@ class MainActivity : Activity() {
         )
     }
 
-    // CONTENEDOR: DEJA ESPACIO SUPERIOR PARA LA BARRA DEL TELÉFONO
     private fun createRoot(): LinearLayout {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -158,7 +159,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // ICONOS TECNOLÓGICOS DIBUJADOS
     private inner class CyberIconView(
         private val iconType: String,
         private val iconColor: Int
@@ -178,8 +178,6 @@ class MainActivity : Activity() {
             val s = dp(62).toFloat()
             val cx = width / 2f
             val cy = height / 2f
-            val left = cx - s / 2f
-            val top = cy - s / 2f
 
             paint.style = Paint.Style.FILL
             paint.color = Color.argb(
@@ -331,8 +329,7 @@ class MainActivity : Activity() {
                 scaleType = ImageView.ScaleType.FIT_CENTER
                 alpha = 0.10f
                 setPadding(dp(25), dp(50), dp(25), dp(50))
-                importantForAccessibility =
-                    View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             }
 
             frame.addView(
@@ -385,7 +382,6 @@ class MainActivity : Activity() {
         return card
     }
 
-    // ENCABEZADO CON LOGO DESTACADO
     private fun addHeader(root: LinearLayout) {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -469,46 +465,33 @@ class MainActivity : Activity() {
         )
     }
 
-    // LOGIN FUTURISTA
+    // LOGIN CON IMAGEN ORIGINAL
     private fun showLogin() {
         val root = createRoot()
 
         root.addView(label("SISTEMA DE ACCESO", 12f, green, true))
+        root.addView(label("DRAGÓN ZETA", 26f, cyan, true))
+        root.addView(label("SEGURIDAD PERSONAL", 12f, green, true))
 
-        val logoFrame = FrameLayout(this).apply {
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(Color.rgb(5, 25, 45))
-                setStroke(dp(2), cyan)
-            }
-            elevation = dp(10).toFloat()
-        }
-
-        val image = ImageView(this).apply {
-            setImageResource(R.drawable.dragon_zeta_logo)
+        val loginImage = ImageView(this).apply {
+            setImageResource(R.drawable.dragon_zeta_login_header)
             scaleType = ImageView.ScaleType.FIT_CENTER
-            setPadding(dp(8), dp(8), dp(8), dp(8))
+            adjustViewBounds = true
         }
 
-        logoFrame.addView(
-            image,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
+        root.addView(
+            loginImage,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(260)
+            ).apply {
+                setMargins(dp(18), dp(8), dp(18), dp(12))
+            }
         )
 
         root.addView(
-            logoFrame,
-            LinearLayout.LayoutParams(dp(142), dp(142)).apply {
-                gravity = Gravity.CENTER_HORIZONTAL
-                setMargins(0, dp(12), 0, dp(12))
-            }
+            label("PROTECCIÓN • CONTROL • SEGURIDAD", 9f, Color.LTGRAY)
         )
-
-        root.addView(label("DRAGÓN ZETA", 26f, cyan, true))
-        root.addView(label("SEGURIDAD PERSONAL", 12f, green, true))
-        root.addView(label("PROTECCIÓN • CONTROL • SEGURIDAD", 9f, Color.LTGRAY))
 
         val card = createCard(root, "ACCESO DE USUARIO", cyan)
 
@@ -569,7 +552,6 @@ class MainActivity : Activity() {
         showScreen(root)
     }
 
-    // PANEL PRINCIPAL
     private fun showHome() {
         if (!loggedIn) {
             showLogin()
@@ -611,7 +593,6 @@ class MainActivity : Activity() {
         showScreen(root, watermark = true)
     }
 
-    // SISTEMA SOS
     private fun addSOSCard(root: LinearLayout) {
         val active = prefs.getBoolean("sos_configured", false)
         val number = prefs.getString("sos_phone", "") ?: ""
@@ -767,7 +748,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // ANTI-CHUPONEO Y ANTI-RASTREO
     private fun addOption(
         root: LinearLayout,
         title: String,
@@ -843,7 +823,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // VENTANA DE ACTUALIZACIÓN VPN
     private fun showVpnSimulationOverlay() {
         val frame = overlayFrame ?: return
         if (vpnSimulationTimer != null) return
@@ -866,7 +845,6 @@ class MainActivity : Activity() {
         card.addView(label("VPN ACTUALIZADA", 14f, green, true))
         card.addView(label("◈", 54f, cyan, true))
 
-        // CORREGIDO: lock es TextView
         val lock = card.getChildAt(2) as TextView
 
         val status = label("INICIANDO CONEXIÓN...", 16f, Color.WHITE, true)
@@ -1031,7 +1009,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // ANTI-CHUPONEO
     private fun showAntiChuponeoOverlay() {
         val frame = overlayFrame ?: return
         if (overlayTimer != null) return
@@ -1195,37 +1172,92 @@ class MainActivity : Activity() {
         )
 
         card.addView(
-            label("Sistema visual de protección de WhatsApp", 12f, Color.LTGRAY)
+            label("SISTEMA DE PROTECCIÓN DE WHATSAPP", 12f, Color.LTGRAY)
         )
 
         val active = prefs.getBoolean("whatsapp_protection_active", false)
 
-        val shield = label(
-            "◈",
-            40f,
-            if (active) green else cyan,
-            true
-        )
-
+        val shield = label("◈", 40f, if (active) green else cyan, true)
         card.addView(shield)
 
         val status = label(
-            if (active) "REVISIÓN VISUAL COMPLETADA"
+            if (active) "PROTECCIÓN MÁXIMA ACTIVADA"
             else "SISTEMA EN ESPERA",
-            16f,
+            15f,
             if (active) green else cyan,
             true
         )
-
         card.addView(status)
 
         val detail = label(
-            if (active) "Revisión visual finalizada"
-            else "Presiona el botón para comenzar",
+            if (active) "Proceso de codificación finalizado"
+            else "Presiona para iniciar el proceso",
             11f,
             Color.LTGRAY
         )
+        card.addView(detail)
 
+        val button = makeButton(
+            if (active) "DESACTIVAR ANTI-HACK WSP"
+            else "ACTIVAR ANTI-HACK WSP",
+            if (active) green else blueButton
+        ) {
+            if (whatsappScanTimer != null) return@makeButton
+
+            if (prefs.getBoolean("whatsapp_protection_active", false)) {
+                prefs.edit()
+                    .putBoolean("whatsapp_protection_active", false)
+                    .apply()
+                showHome()
+                toast("ANTI-HACK WSP DESACTIVADO")
+            } else {
+                showWhatsAppProtectionOverlay()
+            }
+        }
+
+        addButton(card, button)
+    }
+
+    // VENTANA FUTURISTA ANTI-HACK WSP
+    private fun showWhatsAppProtectionOverlay() {
+        val frame = overlayFrame ?: return
+        if (whatsappScanTimer != null) return
+
+        val overlay = FrameLayout(this).apply {
+            setBackgroundColor(Color.argb(205, 0, 5, 17))
+            isClickable = true
+            isFocusable = true
+        }
+
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(20), dp(22), dp(20), dp(20))
+            background = panel(cyan)
+            elevation = dp(20).toFloat()
+        }
+
+        card.addView(label("DRAGÓN ZETA", 24f, cyan, true))
+        card.addView(label("CYBER SECURITY TERMINAL", 11f, green, true))
+
+        val shield = label("◈", 58f, cyan, true)
+
+        card.addView(
+            shield,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(95)
+            )
+        )
+
+        val status = label("CODIFICANDO...", 17f, cyan, true)
+        card.addView(status)
+
+        val detail = label(
+            "Inicializando protocolo de seguridad",
+            11f,
+            Color.LTGRAY
+        )
         card.addView(detail)
 
         val progress = ProgressBar(
@@ -1234,123 +1266,172 @@ class MainActivity : Activity() {
             android.R.attr.progressBarStyleHorizontal
         ).apply {
             max = 100
-            this.progress = if (active) 100 else 0
-            progressTintList = ColorStateList.valueOf(if (active) green else cyan)
-            progressBackgroundTintList = ColorStateList.valueOf(Color.rgb(35, 48, 65))
+            this.progress = 0
+            progressTintList = ColorStateList.valueOf(cyan)
+            progressBackgroundTintList =
+                ColorStateList.valueOf(Color.rgb(35, 48, 65))
         }
 
         card.addView(
             progress,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(10)
+                dp(11)
             ).apply {
-                setMargins(dp(12), dp(10), dp(12), dp(10))
+                setMargins(dp(5), dp(16), dp(5), dp(14))
             }
         )
 
-        val button = makeButton(
-            if (active) "ANTI-HACK WSP ACTIVADO"
-            else "ACTIVAR ANTI-HACK WSP",
-            if (active) green else blueButton
-        ) {}
+        val terminal = TextView(this).apply {
+            text = "DRAGON_ZETA://SECURITY\n> Iniciando sistema..."
+            textSize = 10f
+            typeface = Typeface.MONOSPACE
+            setTextColor(green)
+            gravity = Gravity.START
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            background = panel(green)
+        }
 
-        addButton(card, button)
-
-        button.setOnClickListener {
-            if (whatsappScanTimer != null) return@setOnClickListener
-
-            val currentlyActive = prefs.getBoolean(
-                "whatsapp_protection_active",
-                false
+        card.addView(
+            terminal,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(155)
             )
+        )
 
-            if (currentlyActive) {
+        val close = makeButton("CANCELAR", red) {
+            closeWhatsAppProtectionOverlay(false)
+        }
+
+        card.addView(
+            close,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(48)
+            ).apply {
+                setMargins(0, dp(15), 0, 0)
+            }
+        )
+
+        overlay.addView(
+            card,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+            ).apply {
+                setMargins(dp(22), dp(18), dp(22), dp(18))
+            }
+        )
+
+        frame.addView(
+            overlay,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        whatsappOverlayView = overlay
+
+        val messages = arrayOf(
+            "> Inicializando módulos...",
+            "> Preparando codificación...",
+            "> Verificando parámetros...",
+            "> Sincronizando protocolo...",
+            "> Finalizando proceso...",
+            "> Código de seguridad procesado."
+        )
+
+        whatsappScanAnimator = ObjectAnimator.ofFloat(
+            shield,
+            View.ROTATION,
+            0f,
+            360f
+        ).apply {
+            duration = 1400
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            start()
+        }
+
+        whatsappScanTimer = object : android.os.CountDownTimer(7000, 200) {
+
+            override fun onTick(millisUntilFinished: Long) {
+                val elapsed = 7000L - millisUntilFinished
+                val percent = (elapsed * 100 / 7000).toInt()
+
+                progress.progress = percent
+                status.text = "CODIFICANDO... $percent%"
+
+                detail.text = when {
+                    percent < 25 -> "Inicializando protocolo"
+                    percent < 50 -> "Procesando secuencia"
+                    percent < 75 -> "Verificando parámetros"
+                    else -> "Finalizando codificación"
+                }
+
+                val index = (percent / 17).coerceAtMost(messages.lastIndex)
+                terminal.text = messages.take(index + 1).joinToString("\n")
+            }
+
+            override fun onFinish() {
+                whatsappScanTimer = null
+
+                whatsappScanAnimator?.cancel()
+                whatsappScanAnimator = null
+
+                shield.rotation = 0f
+                shield.setTextColor(green)
+
+                progress.progress = 100
+                progress.progressTintList = ColorStateList.valueOf(green)
+
+                status.text = "PROTECCIÓN MÁXIMA ACTIVADA"
+                status.setTextColor(green)
+
+                detail.text = "CODIFICACIÓN FINALIZADA"
+
+                terminal.text =
+                    "DRAGON_ZETA://SECURITY\n" +
+                    "> CODIFICACIÓN COMPLETADA\n" +
+                    "> PROCESO FINALIZADO\n" +
+                    "> ESTADO: ACTIVADO"
+
                 prefs.edit()
-                    .putBoolean("whatsapp_protection_active", false)
+                    .putBoolean("whatsapp_protection_active", true)
                     .apply()
 
-                shield.animate().cancel()
-                shield.rotation = 0f
-                shield.setTextColor(cyan)
-
-                status.text = "SISTEMA EN ESPERA"
-                status.setTextColor(cyan)
-                detail.text = "Presiona el botón para comenzar"
-                progress.progress = 0
-                progress.progressTintList = ColorStateList.valueOf(cyan)
-
-                button.text = "ACTIVAR ANTI-HACK WSP"
-                button.background = GradientDrawable().apply {
-                    setColor(blueButton)
+                close.text = "FINALIZAR"
+                close.background = GradientDrawable().apply {
+                    setColor(green)
                     cornerRadius = dp(12).toFloat()
                 }
 
-                toast("ANTI-HACK WSP desactivado.")
-            } else {
-                button.isEnabled = false
-                button.text = "REVISANDO CUENTA..."
-                status.text = "REVISANDO CUENTA..."
-                status.setTextColor(cyan)
-                detail.text = "Realizando revisión visual..."
-                shield.setTextColor(cyan)
-
-                progress.progress = 0
-                progress.progressTintList = ColorStateList.valueOf(cyan)
-
-                whatsappScanAnimator = ObjectAnimator.ofFloat(
-                    shield,
-                    View.ROTATION,
-                    0f,
-                    360f
-                ).apply {
-                    duration = 1200
-                    repeatCount = ValueAnimator.INFINITE
-                    interpolator = LinearInterpolator()
-                    start()
+                close.setOnClickListener {
+                    closeWhatsAppProtectionOverlay(true)
                 }
-
-                whatsappScanTimer =
-                    object : android.os.CountDownTimer(5000, 100) {
-
-                        override fun onTick(millisUntilFinished: Long) {
-                            val percent =
-                                ((5000L - millisUntilFinished) * 100 / 5000).toInt()
-
-                            progress.progress = percent
-                            status.text = "REVISANDO CUENTA..."
-                            detail.text = "Revisión visual... $percent%"
-                        }
-
-                        override fun onFinish() {
-                            whatsappScanTimer = null
-                            whatsappScanAnimator?.cancel()
-                            whatsappScanAnimator = null
-
-                            shield.rotation = 0f
-                            shield.setTextColor(green)
-                            progress.progress = 100
-                            progress.progressTintList = ColorStateList.valueOf(green)
-
-                            status.text = "REVISIÓN VISUAL COMPLETADA"
-                            status.setTextColor(green)
-                            detail.text = "PROCESO FINALIZADO"
-
-                            prefs.edit()
-                                .putBoolean("whatsapp_protection_active", true)
-                                .apply()
-
-                            button.text = "ANTI-HACK WSP ACTIVADO"
-                            button.isEnabled = true
-                            button.background = GradientDrawable().apply {
-                                setColor(green)
-                                cornerRadius = dp(12).toFloat()
-                            }
-
-                            toast("REVISIÓN VISUAL COMPLETADA")
-                        }
-                    }.start()
             }
+        }.start()
+    }
+
+    private fun closeWhatsAppProtectionOverlay(activated: Boolean) {
+        whatsappScanTimer?.cancel()
+        whatsappScanTimer = null
+
+        whatsappScanAnimator?.cancel()
+        whatsappScanAnimator = null
+
+        whatsappOverlayView?.let { view ->
+            (view.parent as? ViewGroup)?.removeView(view)
+        }
+
+        whatsappOverlayView = null
+
+        if (activated) {
+            showHome()
+            toast("PROTECCIÓN MÁXIMA ACTIVADA")
         }
     }
 
@@ -1361,7 +1442,6 @@ class MainActivity : Activity() {
         vpnOverlayView?.let { view ->
             (view.parent as? ViewGroup)?.removeView(view)
         }
-
         vpnOverlayView = null
 
         overlayTimer?.cancel()
@@ -1372,6 +1452,11 @@ class MainActivity : Activity() {
 
         whatsappScanAnimator?.cancel()
         whatsappScanAnimator = null
+
+        whatsappOverlayView?.let { view ->
+            (view.parent as? ViewGroup)?.removeView(view)
+        }
+        whatsappOverlayView = null
 
         loggedIn = false
         showLogin()
@@ -1394,6 +1479,8 @@ class MainActivity : Activity() {
 
         whatsappScanAnimator?.cancel()
         whatsappScanAnimator = null
+
+        whatsappOverlayView = null
 
         super.onDestroy()
     }
