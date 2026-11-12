@@ -638,7 +638,6 @@ class MainActivity : Activity() {
     // VALIDACIÓN FIREBASE CON REACTIVACIÓN DE CONEXIÓN
     private fun validateFirebaseAccess(email: String, uid: String) {
 
-        // Intentar habilitar la conexión de Firestore antes de consultar.
         db.enableNetwork()
             .addOnSuccessListener {
 
@@ -767,6 +766,7 @@ class MainActivity : Activity() {
             }
     }
 
+    // VENTANA COMPLETA PARA MOSTRAR Y COPIAR EL ERROR DE FIREBASE
     private fun rejectFirebaseAccess(message: String) {
         loggedIn = false
         loginInProgress = false
@@ -776,7 +776,67 @@ class MainActivity : Activity() {
         loginButtonRef?.isEnabled = true
         loginButtonRef?.text = "INGRESAR AL SISTEMA"
 
-        toast(message)
+        val errorText = TextView(this).apply {
+            text = message
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            typeface = Typeface.MONOSPACE
+            textIsSelectable = true
+            gravity = Gravity.START
+        }
+
+        val scroll = ScrollView(this).apply {
+            isFillViewport = false
+            isVerticalScrollBarEnabled = true
+            addView(
+                errorText,
+                ScrollView.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setTitle("ERROR DRAGÓN ZETA")
+            .setView(
+                scroll,
+                dp(8),
+                dp(4),
+                dp(8),
+                dp(4)
+            )
+            .setPositiveButton("COPIAR ERROR", null)
+            .setNegativeButton("CERRAR", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.window?.setLayout(
+                (resources.displayMetrics.widthPixels * 0.92f).toInt(),
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+
+            dialog.getButton(
+                android.app.AlertDialog.BUTTON_POSITIVE
+            ).setOnClickListener {
+
+                val clipboard =
+                    getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+                clipboard.setPrimaryClip(
+                    ClipData.newPlainText("Error Firebase", message)
+                )
+
+                Toast.makeText(
+                    this,
+                    "ERROR COPIADO. PÉGALO EN EL CHAT.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
+        dialog.show()
     }
 
     private fun showHome() {
