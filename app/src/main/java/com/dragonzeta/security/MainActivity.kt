@@ -10,8 +10,6 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.*
 import android.graphics.drawable.GradientDrawable
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.os.Build
 import android.provider.Settings
@@ -23,9 +21,6 @@ import android.widget.*
 import android.text.InputType
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Source
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -38,15 +33,11 @@ class MainActivity : Activity() {
     private val amber = Color.rgb(255, 180, 40)
     private val blueButton = Color.rgb(0, 105, 220)
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
-
-    // FIRESTORE: CONEXIÓN EXPLÍCITA A LA BASE DE DATOS DEFAULT
-    private val db by lazy {
-        FirebaseFirestore.getInstance("(default)")
-    }
-
-    private val adminEmail = "masterzeproxx@gmail.com"
-    private val yapeNumber = "991292264"
+    // ACCESO LOCAL SIN FIREBASE NI INTERNET
+    private val offlineUsername = "ZEPROXX"
+    private val offlinePassword = "16071997"
+    private val licenseDuration = 365L
+    private val whatsappNumber = "51991292264"
 
     private val prefs by lazy {
         getSharedPreferences("dragon_zeta", MODE_PRIVATE)
@@ -487,6 +478,7 @@ class MainActivity : Activity() {
         )
     }
 
+    // PANTALLA DE ACCESO OFFLINE
     private fun showLogin() {
         loginInProgress = false
         loginButtonRef = null
@@ -520,12 +512,11 @@ class MainActivity : Activity() {
         val card = createCard(root, "ACCESO DE USUARIO", cyan)
 
         val username = EditText(this).apply {
-            hint = "Correo electrónico"
+            hint = "Usuario"
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
             textSize = 15f
-            inputType = InputType.TYPE_CLASS_TEXT or
-                InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            inputType = InputType.TYPE_CLASS_TEXT
             isSingleLine = true
             background = panel(cyan)
             setPadding(dp(14), dp(8), dp(14), dp(8))
@@ -563,78 +554,40 @@ class MainActivity : Activity() {
             }
         )
 
-        lateinit var loginButton: Button
-
-        loginButton = makeButton("INGRESAR AL SISTEMA", green) {
+        val loginButton = makeButton("INGRESAR AL SISTEMA", green) {
             if (loginInProgress) return@makeButton
 
-            val email = username.text.toString().trim()
+            val user = username.text.toString().trim()
             val pass = password.text.toString()
 
-            if (email.isBlank() || pass.isBlank()) {
-                toast("Ingresa tu correo y contraseña.")
+            if (user.isBlank() || pass.isBlank()) {
+                toast("Ingresa tu usuario y contraseña.")
                 return@makeButton
             }
 
             loginInProgress = true
-            loginButton.isEnabled = false
-            loginButton.text = "VERIFICANDO ACCESO..."
+            loginButtonRef?.isEnabled = false
+            loginButtonRef?.text = "VERIFICANDO ACCESO..."
 
-            auth.signInWithEmailAndPassword(email, pass)
-                .addOnSuccessListener { result ->
-                    val uid = result.user?.uid
-
-                    if (uid == null) {
-                        rejectFirebaseAccess("No se pudo identificar tu cuenta.")
-                        return@addOnSuccessListener
-                    }
-
-                    validateFirebaseAccess(email, uid)
-                }
-                .addOnFailureListener { error ->
-                    rejectFirebaseAccess(
-                        "ERROR DE AUTENTICACIÓN: ${error.message}"
-                    )
-                }
+            validateOfflineAccess(user, pass)
         }
 
         loginButtonRef = loginButton
         addButton(card, loginButton)
 
-        val yapeCard = createCard(root, "CONTRATA TU LICENCIA", amber)
-
-        yapeCard.addView(
-            label("¿NO TIENES UNA LICENCIA?", 13f, Color.WHITE, true)
-        )
-        yapeCard.addView(
-            label("CONTRATA TU ACCESO A DRAGÓN ZETA", 11f, Color.LTGRAY)
-        )
-        yapeCard.addView(
-            label("PAGA POR YAPE AL SIGUIENTE NÚMERO", 11f, Color.LTGRAY)
-        )
-        yapeCard.addView(
-            label("991 292 264", 26f, green, true)
-        )
-
         addButton(
-            yapeCard,
-            makeButton("COPIAR NÚMERO DE YAPE", blueButton) {
-                val clipboard =
-                    getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-                clipboard.setPrimaryClip(
-                    ClipData.newPlainText("Número de Yape", yapeNumber)
-                )
-
-                toast("Número de Yape copiado.")
+            card,
+            makeButton("CONTACTAR POR WSP • 991 292 264", blueButton) {
+                openWhatsApp()
             }
         )
 
-        yapeCard.addView(
+        root.addView(
             label(
-                "Después de realizar el pago, contacta al administrador para activar tu licencia.",
+                "LICENCIA: 365 DÍAS DESDE EL PRIMER INGRESO",
                 10f,
-                Color.LTGRAY
+                amber,
+                true
             )
         )
 
@@ -642,212 +595,108 @@ class MainActivity : Activity() {
         showScreen(root)
     }
 
-    // VALIDACIÓN FIREBASE: INTERNET VALIDADO Y CONSULTA DIRECTA AL SERVIDOR
-    private fun validateFirebaseAccess(email: String, uid: String) {
-
-        val connectivityManager =
-            getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-
-        val activeNetwork = connectivityManager?.activeNetwork
-        val capabilities =
-            connectivityManager?.getNetworkCapabilities(activeNetwork)
-
-        val hasInternet =
-            capabilities?.hasCapability(
-                NetworkCapabilities.NET_CAPABILITY_INTERNET
-            ) == true
-
-        val isValidated =
-            capabilities?.hasCapability(
-                NetworkCapabilities.NET_CAPABILITY_VALIDATED
-            ) == true
-
-        if (!hasInternet || !isValidated) {
-            rejectFirebaseAccess(
-                "ANDROID NO DETECTA UNA CONEXIÓN VALIDADA A INTERNET.\n\n" +
-                    "Comprueba tu conexión Wi-Fi e inténtalo nuevamente."
+    private fun openWhatsApp() {
+        try {
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://wa.me/$whatsappNumber")
+                )
             )
+        } catch (e: Exception) {
+            toast("No se pudo abrir WhatsApp.")
+        }
+    }
+
+    // VALIDACIÓN LOCAL Y LICENCIA DE 365 DÍAS
+    private fun validateOfflineAccess(user: String, pass: String) {
+        if (!user.equals(offlineUsername, ignoreCase = true) ||
+            pass != offlinePassword
+        ) {
+            rejectOfflineAccess("USUARIO O CONTRASEÑA INCORRECTOS.")
             return
         }
 
-        db.enableNetwork()
-            .addOnSuccessListener {
+        val now = System.currentTimeMillis()
 
-                db.collection("usuarios")
-                    .document(uid)
-                    .get(Source.SERVER)
-                    .addOnSuccessListener { userDoc ->
+        val startKey = "offline_license_start"
+        val expirationKey = "offline_license_expiration"
+        val lastSeenKey = "offline_last_seen"
 
-                        if (!userDoc.exists()) {
-                            rejectFirebaseAccess(
-                                "No existe el perfil para UID: $uid"
-                            )
-                            return@addOnSuccessListener
-                        }
+        var start = prefs.getLong(startKey, 0L)
+        var expiration = prefs.getLong(expirationKey, 0L)
+        val lastSeen = prefs.getLong(lastSeenKey, 0L)
 
-                        val active = userDoc.getBoolean("activo") == true
-                        val role = userDoc.getString("rol")?.trim() ?: "USUARIO"
-                        val profileEmail = userDoc.getString("correo")?.trim() ?: ""
+        if (start == 0L || expiration == 0L) {
+            start = now
+            expiration = now +
+                licenseDuration * 24L * 60L * 60L * 1000L
 
-                        if (!active) {
-                            rejectFirebaseAccess("Tu cuenta está desactivada.")
-                            return@addOnSuccessListener
-                        }
-
-                        if (email.equals(adminEmail, ignoreCase = true)) {
-
-                            if (!role.equals("ADMIN", ignoreCase = true)) {
-                                rejectFirebaseAccess(
-                                    "El rol encontrado es: $role"
-                                )
-                                return@addOnSuccessListener
-                            }
-
-                            if (!profileEmail.equals(email, ignoreCase = true)) {
-                                rejectFirebaseAccess(
-                                    "El correo del perfil no coincide: $profileEmail"
-                                )
-                                return@addOnSuccessListener
-                            }
-
-                            currentEmail = email
-                            currentRole = "ADMIN"
-                            licenseExpiration = "ACCESO PERMANENTE"
-                            licenseDaysRemaining = -1
-
-                            loggedIn = true
-                            loginInProgress = false
-
-                            showHome()
-                            toast("BIENVENIDO ADMINISTRADOR")
-                            return@addOnSuccessListener
-                        }
-
-                        db.collection("licenses")
-                            .document(uid)
-                            .get(Source.SERVER)
-                            .addOnSuccessListener { licenseDoc ->
-
-                                if (!licenseDoc.exists()) {
-                                    rejectFirebaseAccess(
-                                        "No tienes una licencia registrada."
-                                    )
-                                    return@addOnSuccessListener
-                                }
-
-                                val licenseActive =
-                                    licenseDoc.getBoolean("activo") == true
-
-                                val expiration =
-                                    licenseDoc.getTimestamp("expiresAt")
-
-                                if (!licenseActive || expiration == null) {
-                                    rejectFirebaseAccess(
-                                        "Tu licencia no está activa o no tiene vencimiento."
-                                    )
-                                    return@addOnSuccessListener
-                                }
-
-                                val expirationDate = expiration.toDate()
-                                val remaining =
-                                    expirationDate.time - System.currentTimeMillis()
-
-                                if (remaining <= 0L) {
-                                    rejectFirebaseAccess(
-                                        "Tu licencia de 365 días ha vencido."
-                                    )
-                                    return@addOnSuccessListener
-                                }
-
-                                licenseDaysRemaining =
-                                    ((remaining + 86_399_999L) / 86_400_000L).toInt()
-
-                                licenseExpiration = SimpleDateFormat(
-                                    "dd/MM/yyyy",
-                                    Locale.getDefault()
-                                ).format(expirationDate)
-
-                                currentEmail = email
-                                currentRole = role
-
-                                loggedIn = true
-                                loginInProgress = false
-
-                                showHome()
-
-                                toast(
-                                    "LICENCIA ACTIVA: $licenseDaysRemaining días restantes."
-                                )
-                            }
-                            .addOnFailureListener { error ->
-                                rejectFirebaseAccess(
-                                    "ERROR AL LEER LICENCIA: " +
-                                        "${error.javaClass.simpleName}: ${error.message}"
-                                )
-                            }
-                    }
-                    .addOnFailureListener { error ->
-                        rejectFirebaseAccess(
-                            "ERROR FIRESTORE AL LEER PERFIL: " +
-                                "${error.javaClass.simpleName}: ${error.message}"
-                        )
-                    }
-            }
-            .addOnFailureListener { error ->
-                rejectFirebaseAccess(
-                    "NO SE PUDO ACTIVAR LA CONEXIÓN FIREBASE: " +
-                        "${error.javaClass.simpleName}: ${error.message}"
+            prefs.edit()
+                .putLong(startKey, start)
+                .putLong(expirationKey, expiration)
+                .putLong(lastSeenKey, now)
+                .apply()
+        } else {
+            if (lastSeen > 0L &&
+                now < lastSeen - 5L * 60L * 1000L
+            ) {
+                rejectOfflineAccess(
+                    "SE DETECTÓ UN CAMBIO INCORRECTO EN LA FECHA DEL DISPOSITIVO."
                 )
+                return
             }
-    }
 
-    // CUADRO DE ERROR COMPLETO Y BOTÓN PARA COPIAR
-    private fun rejectFirebaseAccess(message: String) {
-        loggedIn = false
+            if (now >= expiration) {
+                rejectOfflineAccess("TU LICENCIA DE 365 DÍAS HA VENCIDO.")
+                return
+            }
+
+            prefs.edit()
+                .putLong(lastSeenKey, maxOf(now, lastSeen))
+                .apply()
+        }
+
+        if (now >= expiration) {
+            rejectOfflineAccess("TU LICENCIA HA VENCIDO.")
+            return
+        }
+
+        val remaining = expiration - now
+
+        licenseDaysRemaining =
+            ((remaining + 86_399_999L) / 86_400_000L).toInt()
+
+        licenseExpiration = SimpleDateFormat(
+            "dd/MM/yyyy",
+            Locale.getDefault()
+        ).format(java.util.Date(expiration))
+
+        currentEmail = offlineUsername
+        currentRole = "USUARIO"
+
+        loggedIn = true
         loginInProgress = false
 
-        auth.signOut()
+        showHome()
+        toast("ACCESO AUTORIZADO. BIENVENIDO A DRAGÓN ZETA.")
+    }
+
+    private fun rejectOfflineAccess(message: String) {
+        loggedIn = false
+        loginInProgress = false
 
         loginButtonRef?.isEnabled = true
         loginButtonRef?.text = "INGRESAR AL SISTEMA"
 
-        val errorText = TextView(this).apply {
-            this.text = message
-            textSize = 14f
-            setTextColor(Color.WHITE)
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-            typeface = Typeface.MONOSPACE
-            setTextIsSelectable(true)
-        }
-
-        val scroll = ScrollView(this).apply {
-            isFillViewport = false
-            addView(errorText)
-        }
-
-        val builder = android.app.AlertDialog.Builder(this)
-        builder.setTitle("ERROR DRAGÓN ZETA")
-        builder.setView(scroll)
-
-        builder.setPositiveButton("COPIAR ERROR") { _, _ ->
-            val clipboard =
-                getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-            clipboard.setPrimaryClip(
-                ClipData.newPlainText("Error Firebase", message)
-            )
-
-            Toast.makeText(
-                this,
-                "ERROR COPIADO. PÉGALO EN EL CHAT.",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-
-        builder.setNegativeButton("CERRAR", null)
-
-        val dialog = builder.create()
-        dialog.show()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("ERROR DRAGÓN ZETA")
+            .setMessage(message)
+            .setPositiveButton("ACEPTAR", null)
+            .setNegativeButton("CONTACTAR WSP") { _, _ ->
+                openWhatsApp()
+            }
+            .show()
     }
 
     private fun showHome() {
@@ -868,29 +717,22 @@ class MainActivity : Activity() {
 
         profile.addView(
             label(
-                if (currentRole == "ADMIN") "ADMINISTRADOR PRINCIPAL"
-                else "USUARIO AUTORIZADO",
+                "USUARIO AUTORIZADO",
                 12f,
                 green,
                 true
             )
         )
 
-        if (currentRole == "ADMIN") {
-            profile.addView(
-                label("LICENCIA: ACCESO PERMANENTE", 12f, amber, true)
+        profile.addView(label("VENCE: $licenseExpiration", 12f, Color.LTGRAY))
+        profile.addView(
+            label(
+                "DÍAS RESTANTES: $licenseDaysRemaining",
+                15f,
+                if (licenseDaysRemaining <= 30) amber else green,
+                true
             )
-        } else {
-            profile.addView(label("VENCE: $licenseExpiration", 12f, Color.LTGRAY))
-            profile.addView(
-                label(
-                    "DÍAS RESTANTES: $licenseDaysRemaining",
-                    15f,
-                    if (licenseDaysRemaining <= 30) amber else green,
-                    true
-                )
-            )
-        }
+        )
 
         profile.addView(
             label("ESTADO: SISTEMA DISPONIBLE", 11f, Color.LTGRAY)
@@ -1795,7 +1637,7 @@ class MainActivity : Activity() {
         licenseExpiration = ""
         licenseDaysRemaining = 0
 
-        auth.signOut()
+        // Ya no se utiliza Firebase.
         showLogin()
     }
 
