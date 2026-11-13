@@ -14,6 +14,8 @@
     <application
         android:allowBackup="false"
         android:label="Dragón Zeta"
+        android:icon="@drawable/dragon_zeta_logo"
+        android:roundIcon="@drawable/dragon_zeta_logo"
         android:theme="@style/AppTheme"
         android:supportsRtl="true">
 
