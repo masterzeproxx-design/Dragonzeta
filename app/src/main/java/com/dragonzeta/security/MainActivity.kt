@@ -1,4 +1,3 @@
-
 package com.dragonzeta.security
 
 import android.Manifest
@@ -40,7 +39,11 @@ class MainActivity : Activity() {
     private val blueButton = Color.rgb(0, 105, 220)
 
     private val auth by lazy { FirebaseAuth.getInstance() }
-    private val db by lazy { FirebaseFirestore.getInstance() }
+
+    // FIRESTORE: CONEXIÓN EXPLÍCITA A LA BASE DE DATOS DEFAULT
+    private val db by lazy {
+        FirebaseFirestore.getInstance("(default)")
+    }
 
     private val adminEmail = "masterzeproxx@gmail.com"
     private val yapeNumber = "991292264"
